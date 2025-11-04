@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thaumatogenesis</title>
+    <link rel="stylesheet/less" type="text/css" href="thaumatogenesis.less" />
+    <script src="https://cdn.jsdelivr.net/npm/less" ></script>
+</head>
+<body>
+    <div class="game-container">
+        <div class="sidebar-container-left">
+
+        </div>
+        <div class="menu-container-topright">
+
+        </div>
+        <div class="main-renderer-container">
+            <div class="main-renderer">
+                <div class="css-renderer">
+                    <div id="renderercss">
+                        <div class="perspectivefar">
+                            <div class="center perspectivefar">
+                                <div class="camera translate-in">
+                                    <div class="camera main" id="camera-rotate">
+                                        <div class="camera main2" id="camera-translate">
+                                            <div class="camera translate-out">
+                                                <div class="spinimagen render-3d" style="transform: translateY(50px);">
+                                                    <div class="spinimage render-3d" id="example-element" style="transform: translate3d(0, -200px, 0)">
+                                                        <div class="face front">1</div>
+                                                        <div class="face back">2</div>
+                                                        <div class="face right">3</div>
+                                                        <div class="face left">4</div>
+                                                        <div class="face top">5</div>
+                                                        <div class="face bottom">6</div>
+                                                    </div>
+                                                    <div class="ground"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="camera">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="webgl-renderer">
+                    <canvas id="renderergpu">
+
+                    </canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="hidden">
+        <!--Test Cube!!! for TESTING!!!-->
+        <div class="spinimage render-3d" id="example-element" style="transform: rotate3d(2, -1, -1, -0.2turn);">
+            <div class="face front">1</div>
+            <div class="face back">2</div>
+            <div class="face right">3</div>
+            <div class="face left">4</div>
+            <div class="face top">5</div>
+            <div class="face bottom">6</div>
+        </div>
+    </div>
+    <script src="thaumatogenesis.js"></script>
+</body>
+</html>
