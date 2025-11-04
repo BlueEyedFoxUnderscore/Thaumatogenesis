@@ -199,6 +199,9 @@ let log = console.log
 
 log(Math.sin(Math.PI))
 
+sin = Math.sin
+cos = Math.cos
+
 
 let increaseZIntervalIndex
 let increaseYawIntervalIndex
@@ -244,5 +247,6 @@ addEventListener("keyup", (event) => {
         increaseZIntervalIndex = undefined
     }
 })
+
 
 main()
