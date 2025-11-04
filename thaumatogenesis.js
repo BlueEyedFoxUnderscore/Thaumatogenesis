@@ -193,19 +193,21 @@ function main() {
 }
 
 let cameratrans = document.querySelector("#camera-translate")
-let yaw = 0;
+let camerarot = document.querySelector("#camera-rotate")
 
 let log = console.log
 
 log(Math.sin(Math.PI))
 
-sin = Math.sin
-cos = Math.cos
+let sin = Math.sin
+let cos = Math.cos
 
 
 let increaseZIntervalIndex
 let increaseYawIntervalIndex
 let decreaseYawIntervalIndex
+let yaw = 0;
+let pitch = 0;
 let Z = 0;
 let X = 0;
 
@@ -216,7 +218,7 @@ addEventListener("keydown", (event) => {
                 Z += cos(yaw)
                 X += sin(yaw)
                 console.log("increased")
-                cameratrans.setAttribute("style", 'transform: translate3d(0, 0, ' + String(Z) + 'px)');
+                cameratrans.setAttribute("style", `transform: translate3d(${X}px, 0, ${Z}px)`);
             }, 1)
         }
     }
@@ -224,27 +226,38 @@ addEventListener("keydown", (event) => {
         if (increaseYawIntervalIndex == undefined) {
             increaseYawIntervalIndex = setInterval( () => {
                 yaw += 0.01
+                yaw = yaw % (2 * Math.PI);
                 console.log("increased")
-                cameratrans.setAttribute("style", 'transform: translate3d(0, 0, ' + String(Z) + 'px)');
+                camerarot.setAttribute("style", `transform: rotateY(${-yaw}rad) rotateX(${pitch}rad)`);
             }, 1)
         }
     }
     if (event.key == "d") {
         if (decreaseYawIntervalIndex == undefined) {
             decreaseYawIntervalIndex = setInterval( () => {
-                Z += cos(yaw)
-                X += sin(yaw)
+                yaw -= 0.01
+                yaw = yaw % (2 * Math.PI);
                 console.log("increased")
-                cameratrans.setAttribute("style", 'transform: translate3d(0, 0, ' + String(Z) + 'px)');
+                camerarot.setAttribute("style", `transform: rotateY(${-yaw}rad) rotateX(${pitch}rad)`);
             }, 1)
         }
     }
 })
 
+
 addEventListener("keyup", (event) => {
+    console.log(event.key)
     if (event.key == "w") {
         clearInterval(increaseZIntervalIndex)
         increaseZIntervalIndex = undefined
+    }
+    if (event.key == "a") {
+        clearInterval(increaseYawIntervalIndex)
+        increaseYawIntervalIndex = undefined
+    }
+    if (event.key == "d") {
+        clearInterval(decreaseYawIntervalIndex)
+        decreaseYawIntervalIndex = undefined
     }
 })
 
