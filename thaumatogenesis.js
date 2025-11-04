@@ -220,7 +220,7 @@ let yaw   = 0,
 
 
 let tw, ts, tq, te, ta, td, tz, tc;
-
+let mouseX, mouseY;
 let movespeed = 0.5;
 let sensitivity = 0.002;
 
@@ -228,12 +228,18 @@ console.log(true || false)
 
 function cameraHandler () {
     cameratrans.setAttribute("style", `transform: translate3d(${X}px, 0, ${Z}px)`);
-    camerarot.setAttribute("style", `transform: rotateX(${pitch}rad) rotateY(${-yaw}rad)` )
+    camerarot.setAttribute("style", `transform: rotateX(${pitch}rad) rotateY(${-yaw}rad)`)
 }
 
 setInterval(cameraHandler, 0)
 
-
+addEventListener("mousemove", (event) => {
+    console.log(event)
+    if (tracking) {
+        pitch += event.movementY * sensitivity
+        yaw += event.movementX * sensitivity
+    }
+})
 
 addEventListener("keydown", (event) => { 
     if (event.key == "w") {
@@ -335,6 +341,16 @@ addEventListener("keydown", (event) => {
     }
 }) 
 
+let tracking
+
+document.addEventListener('mousedown', function(event) {
+    if(event.button == 0) tracking = true;
+});
+  
+document.addEventListener('mouseup', function(event) {
+    if (event.button == 0) tracking = false;
+});
+
 addEventListener("keyup", (event) => {
     if (event.key == "w") {
         clearInterval(increaseZIntervalIndex)
@@ -376,5 +392,3 @@ addEventListener("keyup", (event) => {
         decreasePitchIntervalIndex = undefined
     }
 })
-
-main()
