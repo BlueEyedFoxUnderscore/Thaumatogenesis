@@ -1,6 +1,10 @@
 "use strict";
 let currentSceneFlags = [];
 
+let sin = Math.sin
+let cos = Math.cos
+let now = Date.now
+
 let saveJSON = `
 {
     "gamestage_components": {
@@ -26,6 +30,7 @@ function verifySaveIntegrity(save) {
 
 verifySaveIntegrity(saveJSON)
 
+/*
 var gamemain = document.querySelector("#renderergpu");
 var gl = gamemain.getContext("webgl2");
 
@@ -191,75 +196,185 @@ function main() {
     var count = 3;
     gl.drawArrays(primitiveType, offset, count);
 }
+*/
 
 let cameratrans = document.querySelector("#camera-translate")
 let camerarot = document.querySelector("#camera-rotate")
-
 let log = console.log
 
-log(Math.sin(Math.PI))
+let increaseZIntervalIndex, 
+    decreaseZIntervalIndex, 
+    increaseXIntervalIndex, 
+    decreaseXIntervalIndex, 
+    increaseYawIntervalIndex, 
+    decreaseYawIntervalIndex, 
+    increasePitchIntervalIndex, 
+    decreasePitchIntervalIndex;
 
-let sin = Math.sin
-let cos = Math.cos
+let yaw   = 0, 
+    pitch = 0, 
+    roll  = 0, 
+    Z     = 0, 
+    Y     = 0, 
+    X     = 0;
 
 
-let increaseZIntervalIndex
-let increaseYawIntervalIndex
-let decreaseYawIntervalIndex
-let yaw = 0;
-let pitch = 0;
-let Z = 0;
-let X = 0;
+let tw, ts, tq, te, ta, td, tz, tc;
+
+let movespeed = 0.5;
+let sensitivity = 0.002;
+
+console.log(true || false)
+
+function cameraHandler () {
+    cameratrans.setAttribute("style", `transform: translate3d(${X}px, 0, ${Z}px)`);
+    camerarot.setAttribute("style", `transform: rotateX(${pitch}rad) rotateY(${-yaw}rad)` )
+}
+
+setInterval(cameraHandler, 0)
+
+
 
 addEventListener("keydown", (event) => { 
     if (event.key == "w") {
         if (increaseZIntervalIndex == undefined) {
+            tw = now()
             increaseZIntervalIndex = setInterval( () => {
-                Z += cos(yaw)
-                X += sin(yaw)
-                console.log("increased")
-                cameratrans.setAttribute("style", `transform: translate3d(${X}px, 0, ${Z}px)`);
+                let t = now();
+                let dt = t - tw;
+                Z += cos(yaw) * movespeed * dt
+                X += sin(yaw) * movespeed * dt
+                tw = t
+            }, 1)
+        }
+    }
+    if (event.key == "s") {
+        if (decreaseZIntervalIndex == undefined) {
+            ts = now()
+            decreaseZIntervalIndex = setInterval( () => {
+                let t = now()
+                let dt = t - ts
+                Z -= cos(yaw) * movespeed * dt
+                X -= sin(yaw) * movespeed * dt
+                ts = t
             }, 1)
         }
     }
     if (event.key == "a") {
-        if (increaseYawIntervalIndex == undefined) {
-            increaseYawIntervalIndex = setInterval( () => {
-                yaw += 0.01
-                yaw = yaw % (2 * Math.PI);
-                console.log("increased")
-                camerarot.setAttribute("style", `transform: rotateY(${-yaw}rad) rotateX(${pitch}rad)`);
+        if (increaseXIntervalIndex == undefined) {
+            ta = now()
+            increaseXIntervalIndex = setInterval( () => {
+                let t = now()
+                let dt = t - ta
+                Z += sin(-yaw) * movespeed * dt
+                X += cos(-yaw) * movespeed * dt
+                ta = t
             }, 1)
         }
     }
+    
     if (event.key == "d") {
-        if (decreaseYawIntervalIndex == undefined) {
-            decreaseYawIntervalIndex = setInterval( () => {
-                yaw -= 0.01
-                yaw = yaw % (2 * Math.PI);
-                console.log("increased")
-                camerarot.setAttribute("style", `transform: rotateY(${-yaw}rad) rotateX(${pitch}rad)`);
+        if (decreaseXIntervalIndex == undefined) {
+            td = now()
+            decreaseXIntervalIndex = setInterval( () => {
+                let t = now()
+                let dt = t - td
+                Z -= sin(-yaw) * movespeed * dt
+                X -= cos(-yaw) * movespeed * dt
+                td = t
             }, 1)
         }
     }
-})
 
+    if (event.key == "q") {
+        if (increaseYawIntervalIndex == undefined) {
+            tq = now()
+            increaseYawIntervalIndex = setInterval( () => {
+                let t = now()
+                let dt = t - tq
+                yaw += sensitivity * dt
+                tq = t
+            }, 1)
+        }
+    }
+
+    if (event.key == "e") {
+        if (decreaseYawIntervalIndex == undefined) {
+            te = now()
+            decreaseYawIntervalIndex = setInterval( () => {
+                let t = now()
+                let dt = t - te
+                yaw -= sensitivity * dt
+                te = t
+            }, 1)
+        }
+    }
+
+    if (event.key == "z") {
+        if (increasePitchIntervalIndex == undefined) {
+            tz = now()
+            increasePitchIntervalIndex = setInterval( () => {
+                let t = now()
+                let dt = t - tz
+                pitch += sensitivity * dt
+                tz = t
+            }, 1)
+        }
+    }
+    
+    if (event.key == "c") {
+        if (decreasePitchIntervalIndex == undefined) {
+            tc = now()
+            decreasePitchIntervalIndex = setInterval( () => {
+                let t = now()
+                let dt = t - tc
+                pitch -= sensitivity * dt
+                tc = t
+            }, 1)
+        }
+    }
+}) 
 
 addEventListener("keyup", (event) => {
-    console.log(event.key)
     if (event.key == "w") {
         clearInterval(increaseZIntervalIndex)
         increaseZIntervalIndex = undefined
     }
-    if (event.key == "a") {
+
+    if (event.key == "s") {
+        clearInterval(decreaseZIntervalIndex)
+        decreaseZIntervalIndex = undefined
+    }
+    
+    if (event.key == "q") {
         clearInterval(increaseYawIntervalIndex)
         increaseYawIntervalIndex = undefined
     }
-    if (event.key == "d") {
+    
+    if (event.key == "e") {
         clearInterval(decreaseYawIntervalIndex)
         decreaseYawIntervalIndex = undefined
     }
-})
+    
+    if (event.key == "a") {
+        clearInterval(increaseXIntervalIndex)
+        increaseXIntervalIndex = undefined
+    }
+    
+    if (event.key == "d") {
+        clearInterval(decreaseXIntervalIndex)
+        decreaseXIntervalIndex = undefined
+    }
 
+    if (event.key == "z") {
+        clearInterval(increasePitchIntervalIndex)
+        increasePitchIntervalIndex = undefined
+    }
+    
+    if (event.key == "c") {
+        clearInterval(decreasePitchIntervalIndex)
+        decreasePitchIntervalIndex = undefined
+    }
+})
 
 main()
