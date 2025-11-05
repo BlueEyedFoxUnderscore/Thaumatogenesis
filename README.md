@@ -6,7 +6,7 @@ Thaumatogenesis, being in early stages, is currently *very* unstable. As in, I h
 
 ## Inspirations
 
-Thaumatogenesis was inspired by (corru.observer)[https://corru.observer], which is a web game that you have no excuse not to play if you are reading this on a sufficiently large monitor. 
+Thaumatogenesis was inspired by [corru.observer](https://corru.observer), which is a web game that you have no excuse not to play if you are reading this on a sufficiently large monitor. 
 
 Like corru.observer, this is going to be fully rendered using CSS. Unlike corru.observer, I am planning to eventually add an OpenGL *mode*, as well as shading using SSFD (surface stable fractal dithering). I'm borrowing some from that art style, but since Thaumatogenesis has open movement, I'm having to adapt some things (including having fully 3d objects instead of just 2.5d ones).
 
