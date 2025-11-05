@@ -192,7 +192,7 @@ body {
 }
 
 @camx: 000px;
-@camy: 400px;
+@camy: 300px;
 @camz: 1500px;
 
 @camtx: 000px;
@@ -224,7 +224,6 @@ body {
     height: @ident-size;
     right: calc((@ident-size - 100%) / 2 + 1px);
     bottom: calc((@ident-size - 100%) / 2 + 1px);
-    color: transparent;
 }
 
 .identifierbox {
@@ -258,8 +257,17 @@ body {
                 content: ": "
             }
         }
-        .value {
-            text-decoration: dotted;
+        .value:has(.alternates) {
+            text-decoration: 1px dotted white underline;
+            .alternates {
+                display: none;
+            }
+            &:hover {
+                .alternates {
+                    display: block;
+                    position: absolute;
+                }
+            }
         }
     }
 }

@@ -15,6 +15,23 @@
     transform: rotate3d(0, 1, 0, 360deg);
   }
 }
+@keyframes inverseRotateY {
+  0% {
+    transform: rotate3d(0, 1, 0, 0deg);
+  }
+  25% {
+    transform: rotate3d(0, 1, 0, -90deg);
+  }
+  50% {
+    transform: rotate3d(0, 1, 0, -180deg);
+  }
+  75% {
+    transform: rotate3d(0, 1, 0, -270deg);
+  }
+  100% {
+    transform: rotate3d(0, 1, 0, -360deg);
+  }
+}
 .spinimage {
   animation: 3s linear 1s infinite running both rotateY;
 }
@@ -23,6 +40,7 @@ body {
   margin: 0;
   width: 100vw;
   height: 100vh;
+  overflow: hidden;
 }
 .game-container {
   width: 100%;
@@ -119,8 +137,8 @@ body {
   position: absolute;
   width: 4000px;
   height: 4000px;
-  background-image: radial-gradient(circle farthest-corner at center, red 1%, transparent 1.1%, transparent 100%), repeating-linear-gradient(to bottom, #ccc 0, #ccc 1px, transparent 1px, transparent 20px), repeating-linear-gradient(to right, #ccc 0, #ccc 1px, transparent 1px, transparent 20px);
-  background-size: 100% 100%;
+  background-image: radial-gradient(circle farthest-corner at center, red 1%, transparent 1.1%, transparent 100%), repeating-linear-gradient(to bottom, #ccc 0, #ccc calc(5 * 1px), transparent calc(5 * 1px), transparent 200px), repeating-linear-gradient(to right, #ccc 0, #ccc calc(5 * 1px), transparent calc(5 * 1px), transparent 200px);
+  background-size: 100px 100px;
   /* Size of the grid cells */
   content: " ";
   transform: rotate3d(1, 0, 0, 90deg);
@@ -137,8 +155,58 @@ body {
   transform: translate3d(0px, 0px, 800px);
 }
 .camera.translate-out {
-  transform: translate3d(0px, 0px, -1500px);
+  transform: translate3d(0px, -300px, -1500px);
 }
 .camera.translate-in {
-  transform: translate3d(0px, 0px, 1500px);
+  transform: translate3d(0px, 300px, 1500px);
+}
+.identify {
+  z-index: 100;
+  position: relative;
+  width: 200%;
+  height: 200%;
+  right: calc((200% - 100%) / 2 + 1px);
+  bottom: calc((200% - 100%) / 2 + 1px);
+}
+.identifierbox {
+  position: absolute;
+  aspect-ratio: 1;
+  border: 2px solid black;
+}
+.ident-boxes {
+  background-color: #000;
+  color: #FFF;
+  border: 2px solid #555;
+  font-family: 'Consolas', 'Courier New', Courier, monospace;
+  padding: 2px;
+}
+.properties {
+  min-width: 200px;
+  min-height: 100px;
+  position: absolute;
+  right: -100%;
+  background-color: #000;
+  color: #FFF;
+  border: 2px solid #555;
+  font-family: 'Consolas', 'Courier New', Courier, monospace;
+  padding: 2px;
+}
+.properties .property {
+  font-size: 0.75em;
+}
+.properties .property .name::after {
+  content: ": ";
+}
+.properties .property .value:has(.alternates) {
+  text-decoration: 1px dotted white underline;
+}
+.properties .property .value:has(.alternates) .alternates {
+  display: none;
+}
+.properties .property .value:has(.alternates):hover .alternates {
+  display: block;
+  position: absolute;
+}
+.properties-html {
+  display: none;
 }

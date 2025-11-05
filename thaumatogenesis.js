@@ -1,26 +1,47 @@
 "use strict";
 let currentSceneFlags = [];
 
-let sin = Math.sin
-let cos = Math.cos
-let tan = Math.tan
-let asin = Math.asin
-let acos = Math.acos
-let atan = Math.atan
-let now = Date.now
-let sqrt = Math.sqrt
-let abs = Math.abs
-let pi = Math.PI
-let assert = console.assert
+// Aliased functions
+let sin = Math.sin,
+    cos = Math.cos,
+    tan = Math.tan,
+    asin = Math.asin,
+    acos = Math.acos,
+    atan = Math.atan,
+    now = Date.now,
+    sqrt = Math.sqrt,
+    abs = Math.abs,
+    sign = Math.sign,
+    max = Math.max,
+    min = Math.min,
+    pi = Math.PI,
+    assert = console.assert,
+    log = console.log
 
-let identifiables = document.getElementsByClassName("identifiable")
-let identifiers = document.getElementsByClassName("identify")
-let identifierpath = document.getElementById("identifiers")
-let identifierProperties = [];
-let identifierBoxes = [];
-let identifierSizes = [];
-let identifierPropertySizes = [];
+// Camera variables
+let yaw   = 0, 
+    pitch = 0, 
+    roll  = 0, 
+    Z     = 0, 
+    Y     = 0, 
+    X     = 0;
 
+// Identifiables and related
+const identifiables = document.getElementsByClassName("identifiable"),
+      identifiers = document.getElementsByClassName("identify"),
+      identifierpath = document.getElementById("identifiers");
+let identifierProperties = [],
+    identifierBoxes = [],
+    identifierSizes = [],
+    identifierPropertySizes = [];
+
+// Scene and camera
+const scene = document.getElementById("scene"),
+      cameraOrigin = document.getElementById("camera-origin"),
+      cameratrans = document.getElementById("camera-translate"),
+      camerarot = document.getElementById("camera-rotate")
+
+// Save JSON (currently unused)
 let saveJSON = `
 {
     "gamestage_components": {
@@ -30,270 +51,200 @@ let saveJSON = `
 }
 `
 
-console.log(JSON.parse(saveJSON).gamestage_components)
-
+// Verify all components of save are present and paresable
 function verifySaveIntegrity(save) {
     saveJSON = JSON.parse(save)
-    if (
-        saveJSON.gamestage_components != undefined &&
+    if (saveJSON.gamestage_components != undefined &&
         saveJSON.gamestage_components.gamestage_tags != undefined &&
-        saveJSON.gamestage_components.gamestage != undefined) {
-        console.log("Save is valid")
-    } else {
-        console.log("Missing some components")
-    }
+        saveJSON.gamestage_components.gamestage != undefined) log ("Save is not corrupt");
+    else assert (false, "Missing components")
 }
 
-verifySaveIntegrity(saveJSON)
-
-/*
-var gamemain = document.querySelector("#renderergpu");
-var gl = gamemain.getContext("webgl2");
-
-var vertexShaderSource = `#version 300 es
- 
-// an attribute is an input (in) to a vertex shader.
-// It will receive data from a buffer
-in vec4 a_position;
- 
-// all shaders have a main function
-void main() {
- 
-  // gl_Position is a special variable a vertex shader
-  // is responsible for setting
-  gl_Position = a_position;
-}
-`;
-
-var fragmentShaderSource = `#version 300 es
- 
-// fragment shaders don't have a default precision so we need
-// to pick one. highp is a good default. It means "high precision"
-precision highp float;
- 
-// we need to declare an output for the fragment shader
-out vec4 outColor;
- 
-void main() {
-  // Just set the output to a constant reddish-purple
-  outColor = vec4(1, 0, 0.5, 1);
-}
-`;
-
-function createShader(gl, type, source) {
-    var shader = gl.createShader(type);
-    gl.shaderSource(shader, source);
-    gl.compileShader(shader);
-    var success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
-    if (success) {
-        return shader;
-    }
-
-    console.log(gl.getShaderInfoLog(shader));
-    gl.deleteShader(shader);
-}
-
-var vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
-var fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
-
-function enableCPURendering() {
-
-}
-
-function enableGPURendering() {
-
-}
-
-if (!gl) {
-    enableCPURendering()
-} else {
-    enableGPURendering()
-}
-
-function createProgram(gl, vertexShader, fragmentShader) {
-    var program = gl.createProgram();
-    gl.attachShader(program, vertexShader);
-    gl.attachShader(program, fragmentShader);
-    gl.linkProgram(program);
-    var success = gl.getProgramParameter(program, gl.LINK_STATUS);
-    if (success) {
-        return program;
-    }
-
-    console.log(gl.getProgramInfoLog(program));
-    gl.deleteProgram(program);
-}
-
-function resizeCanvasToDisplaySize(canvas) {
-    // Lookup the size the browser is displaying the canvas in CSS pixels.
-    const displayWidth  = canvas.clientWidth;
-    const displayHeight = canvas.clientHeight;
-   
-    // Check if the canvas is not the same size.
-    const needResize = canvas.width  !== displayWidth ||
-                       canvas.height !== displayHeight;
-   
-    if (needResize) {
-      // Make the canvas the same size
-      canvas.width  = displayWidth;
-      canvas.height = displayHeight;
-    }
-   
-    return needResize;
-  }
-
-function main() {
-    // Get A WebGL context
-    var canvas = document.querySelector("#renderergpu");
-    var gl = canvas.getContext("webgl2");
-    if (!gl) {
-      return;
-    }
-  
-    // create GLSL shaders, upload the GLSL source, compile the shaders
-    var vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
-    var fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
-  
-    // Link the two shaders into a program
-    var program = createProgram(gl, vertexShader, fragmentShader);
-  
-    // look up where the vertex data needs to go.
-    var positionAttributeLocation = gl.getAttribLocation(program, "a_position");
-  
-    // Create a buffer and put three 2d clip space points in it
-    var positionBuffer = gl.createBuffer();
-  
-    // Bind it to ARRAY_BUFFER (think of it as ARRAY_BUFFER = positionBuffer)
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-  
-    var positions = [
-      0, 0,
-      0, 0.5,
-      0.7, 0,
-    ];
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
-  
-    // Create a vertex array object (attribute state)
-    var vao = gl.createVertexArray();
-  
-    // and make it the one we're currently working with
-    gl.bindVertexArray(vao);
-  
-    // Turn on the attribute
-    gl.enableVertexAttribArray(positionAttributeLocation);
-  
-    // Tell the attribute how to get data out of positionBuffer (ARRAY_BUFFER)
-    var size = 2;          // 2 components per iteration
-    var type = gl.FLOAT;   // the data is 32bit floats
-    var normalize = false; // don't normalize the data
-    var stride = 0;        // 0 = move forward size * sizeof(type) each iteration to get the next position
-    var offset = 0;        // start at the beginning of the buffer
-    gl.vertexAttribPointer(
-        positionAttributeLocation, size, type, normalize, stride, offset);
-  
-    resizeCanvasToDisplaySize(gl.canvas);
-  
-    // Tell WebGL how to convert from clip space to pixels
-    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-  
-    // Clear the canvas
-    gl.clearColor(0, 0, 0, 0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
-  
-    // Tell it to use our program (pair of shaders)
-    gl.useProgram(program);
-  
-    // Bind the attribute/buffer set we want.
-    gl.bindVertexArray(vao);
-  
-    // draw
-    var primitiveType = gl.TRIANGLES;
-    var offset = 0;
-    var count = 3;
-    gl.drawArrays(primitiveType, offset, count);
-}
-*/
-
-let cameratrans = document.querySelector("#camera-translate")
-let camerarot = document.querySelector("#camera-rotate")
-let log = console.log
-
-let increaseZIntervalIndex, 
-    decreaseZIntervalIndex, 
-    increaseXIntervalIndex, 
-    decreaseXIntervalIndex, 
-    increaseYawIntervalIndex, 
-    decreaseYawIntervalIndex, 
-    increasePitchIntervalIndex, 
-    decreasePitchIntervalIndex;
-
-let yaw   = 0, 
-    pitch = 0, 
-    roll  = 0, 
-    Z     = 0, 
-    Y     = 0, 
-    X     = 0;
-
-
-let tw, ts, tq, te, ta, td, tz, tc;
+// Intervals and movement related functions
+let lastZIncrease, 
+    lastZDecrease, 
+    lastYawIncrease, 
+    lastYawDecrease, 
+    lastXIncrease, 
+    lastXDecrease, 
+    lastPitchIncrease, 
+    lastPitchDecrease;
 let movespeed = 0.5;
 let sensitivity = 0.002;
 
+// Interval names
+let increaseZInterval,
+    decreaseZInterval,
+    increaseXInterval,
+    decreaseXInterval,
+    increaseYawInterval,
+    decreaseYawInterval,
+    increasePitchInterval,
+    decreasePitchInterval
+
 function cameraHandler () {
+    // Clamp so we can't invert view direction (leads to unwanted inversion of yaw)
     pitch = (pitch > pi / 2)? pi / 2: (pitch < -pi / 2)? -pi / 2: pitch
+
+    // Take the modulo so our value stays within normal bounds.
     yaw = yaw < 0? yaw + 2 * pi: yaw > 2 * pi? yaw - 2 * pi: yaw 
-    cameratrans.setAttribute("style", `transform: translate3d(${X}px, 0, ${Z}px)`);
+
+    // Set our translation and rotation
+    cameratrans.setAttribute("style", `transform: translate3d(${X}px, 50px, ${Z}px)`);
     camerarot.setAttribute("style", `transform: rotateX(${pitch}rad) rotateY(${-yaw}rad)`)
 }
 
 let i = 0;
 let boxesRegistered = false;
+
 function registerIdentifierBoxes() {
+    // Don't create elements with the same ID (that would be bad)
     if (boxesRegistered) return;
+
+    // Iterate over our identifier elements.
     for (const e of identifiers) {
+        // Create our 2d boxes
         identifierpath.innerHTML += `<div id="identifierbox${i}" class="identifierbox"><div class="actions"></div><div class="associations"></div><div class="names"></div><div class="properties"></div></div>`
-        log('x')
-        log(identifierpath.innerHTML)
+
+        // Register our 2d boxes
         identifierBoxes[i] = document.getElementById(`identifierbox${i}`)
+
+        // Get our identifier's contents (these are hidden in the 3d view.)
         identifierProperties[i] = e.children;
-        identifierSizes[i] = {topdims: {top: 0, left: 0, height: 0, width: 0}, propertydims: {width: 0}};
+
+        // Store our dimensions. This helps to optimize our DOM acesses, since otherwise we would be setting our properties every tick (1ms at the moment).
+        identifierSizes[i] = {topdims: {top: 0, left: 0, height: 0, width: 0, rendered: false}, propertydims: {width: 0}};
+        
+        // Increase our array indexes.
         i += 1;
     }
+
+    // Prevent this from being done again (again, same ID would be bad)
     boxesRegistered = true;
 }
 
 registerIdentifierBoxes()
 
+function dotProduct(x1, y1, z1, x2, y2, z2) {
+    return (x1 * x2) + (y1 * y2) + (z1 * z2);
+}
 
+function getLookVector() {
+    
+    /* [markdown]
+    *   Imagine we have a unit sphere, and a point upon it. We only know the point's pitch and yaw, and must find where it is on the sphere.
+    *   Since our yaw applies first, we must first find the point along the unit *circle* where our point lies (essentially, the half-plane in which it *could* lie). We can do this easily using Euler's identity:
+        
+        *       $e^{i\theta} = \cos(\theta) + i \sin(\theta)$
 
-function identifiableHandler () {
+        *   where theta is our yaw. Converting from imaginary to parametric, we have:
+
+        *       {x: sin(θ), z: cos(θ)}
+            
+        *   You may notice that we have x and z instead of x and y, and that they are reversed. 
+        *   We have Z because Y is our upwards direction, which we have not derived yet.
+        *   But for X and Z being swapped: This is HTML trickery and I have NO IDEA why it is. AT ALL.
+        *   I think it has something to do with how the camera is configured (?) but I have no idea. 
+        -# someone please tell me ::(
+        
+        *   We now have to get the position of the camera upwards. 
+        *   The next step is to acquire the great circle perpendicular to the unit circle and passing through our point.
+        *   The first step in this process is to see that the 'y' of this circle is *always upwards*. From this, we can derive our final Y coordinate:
+        *   
+        *       {x: sin(θ), y: sin(φ), z: cos(θ)}
+        *   
+        *   The next step is to recognize that we already have the 'x' of this circle: our original X and Z. So, all we have to do is multiply them by the cosine of our pitch:
+        *   
+        *       {x: sin(θ)cos(φ), y: sin(φ), z: cos(θ)cos(φ)}
+        *   
+        *   and we have our final answers.
+        */
+    
+    return {x: sin(yaw) * cos(pitch), y: -sin(pitch), z: cos(yaw) * cos(pitch)}
+}
+
+function identifiableHandler() {
     i = 0;
+    // Iterate over all identifiers
     for (const e of identifiers) {
+        // Get their origin's x, y, and z
         let identX = e.getAttribute("--3d-x"),
             identY = e.getAttribute("--3d-y"),
             identZ = e.getAttribute("--3d-z");
 
+        // Get distance to camera
         let dX = X - identX,
             dY = Y - identY,
             dZ = Z - identZ;
 
+        // Get our look vector.
+
+        let lookVec = getLookVector()
+        let lookX = lookVec.x,
+            lookY = lookVec.y,
+            lookZ = lookVec.z
+
+        // We have to check if this specific identifiable is behind the camera, because otherwise we would *also* render our action box at 180 degrees from the current look view.
+        // This is done using linear algebra. Specifically, if our vectors are more than 90 degrees apart (where we can garuntee they aren't rendering), their dot product will be less than zero.
+        // (yes, this is why we calculated the look vector earlier)
+        let isRendered = sign(dotProduct(dX, dY, dZ, lookX, lookY, lookZ)) < 0;
+
+        // Do some trig to get our rotation angles.
+        /* [markdown]
+      * Time for some more **math**! Trig again. Gotta love it.
+      * In order to get the angles we need, we use right triangles.
+      * Our first angle, yaw, we get using the right triangle on the ground (ignoring Y):
+      * 
+      *           θ (yaw)
+      *           /|
+      *          / |
+      *         /  |
+      *    dR  /   | dX
+      *       /    |
+      *      /     |
+      *     /______|
+      *       dZ
+      * 
+      * The first step here is to calculate dR, which using the pythagorean theorum is √dX²+dZ².
+      * Translating to code, that's sqrt(dX * dX + dZ * dZ).
+      * The next step in getting our object's required yaw is taking the arcsin. We derive this from:
+      * 
+      *     sin(θ) = dZ/dR
+      *         θ  = asin(dZ/dR)
+      * 
+      * Of course, arcsin won't give us the full answer, because it doesn't preserve our sign. Instead, we now have to check the sign of our X, and multiply by -1 if it's <0:
+      * 
+      *            = asin(dZ/dR) * sign(dX)
+      * 
+      * And subtract pi/2 so it's perpendicular to us instead of parallel, as well as multiply by negative one since HTML hates us:
+      * 
+      *            = -(asin(dZ/dR) + pi/2) * sign(dX)
+      *            
+      * We do the same with pitch, except with dR and dD instead of dZ and dR. Also, since pitch faces perpendicular to our element, we don't have to add pi/2.
+        */
         let dR = sqrt(dX*dX + dZ*dZ)
         let dD = sqrt(dR*dR + dY*dY)
-        let pitch = asin(dR/dD)
-        let yaw = -asin(dZ/dR)
+        let pitch2 = (asin(dR/dD)) * sign(dY)
+        let yaw2 = (asin(dZ/dR) + pi/2) * sign(dX) * -1
 
-        e.setAttribute("style", `transform: rotateY(${(yaw - pi/2) * (Math.sign(dX) > 0? 1: -1)}rad) rotateX(${pitch + pi/2}rad)`)
+        // Set our 3d box's rotation and translation.
+        e.setAttribute("style", `transform: rotateY(${yaw2}rad) rotateX(${pitch2 + pi/2}rad)`)
+        
+        // Get its boundaries on screen
         let bound = e.getBoundingClientRect();
-        let side = Math.max(bound.width, bound.height)
+
+        // Get its center
         let y = (bound.top + bound.bottom)/2;
         let x = (bound.right + bound.left)/2;
-        let rasterPoint = {x, y};
         
+        // Get our properties box (2d) and its bounds
         let props = identifierBoxes[i].children[3];
         let propsBound = props.getBoundingClientRect();
 
-        let size = Math.min(300000/dD, 300);
+        // Get our 2d ident box's desired size
+        let size = min(300000/dD, 300);
 
+        // Get our previous and current size tables
         let prevSize = identifierSizes[i]
         let currSize = 
         {
@@ -301,173 +252,129 @@ function identifiableHandler () {
                 top: y - size/2, 
                 left: x - size/2, 
                 height: size, 
-                width: size}, 
+                width: size,
+                rendered: isRendered
+            }, 
             propertydims: {
                 width: -propsBound.width - 10
             }
         };
 
-        if (prevSize.topdims.top != currSize.topdims.top || 
-            prevSize.topdims.left != currSize.topdims.left || 
-            prevSize.topdims.height != currSize.topdims.height || 
-            prevSize.topdims.width != currSize.topdims.width) 
+        // Check if our dimensions have changed
+        if ((prevSize.topdims.top      != currSize.topdims.top || 
+             prevSize.topdims.left     != currSize.topdims.left || 
+             prevSize.topdims.height   != currSize.topdims.height || 
+             prevSize.topdims.width    != currSize.topdims.width ||
+             prevSize.topdims.rendered != currSize.topdims.rendered) && isRendered) 
         {
+            // If they have, set our attributes
             identifierBoxes[i].setAttribute("style", `top: ${y - size/2}px; left: ${x - size/2}px; height: ${size}px; width: ${size}px`);
+        } else if (prevSize.topdims.rendered != currSize.topdims.rendered && !isRendered) {
+            // If it isn't rendered *and* it *was* rendered last frame, set it's visibility to hidden
+            identifierBoxes[i].setAttribute("style", `visibility: hidden`)
         }
 
-        if (prevSize.propertydims.width != currSize.propertydims.width) {
+        // If our property box's dimensions have changed, set those dimensions (currently, the Right property, which changes dynamically based on its width)
+        if (prevSize.propertydims.width != currSize.propertydims.width && isRendered) {
             identifierBoxes[i].children[3].setAttribute("style", `right: ${-propsBound.width - 10}px`)
             identifierBoxes[i].children[3].innerHTML = identifierProperties[0][0].innerHTML;
         }
 
+        // Set our identifier sizes
         identifierSizes[i] = currSize
     }
 }
 
-function areObjectsEqual(obj1, obj2) {
-    if (obj1 === obj2) return true; // Same object reference
+// Move handlers
 
-    assert(typeof(obj1) == typeof({}) && typeof(obj2) == typeof({}))
+let moveForward = () => 
+    {
+        let t = now();
+        let dt = t - lastZIncrease;
+        Z += cos(yaw) * movespeed * dt
+        X += sin(yaw) * movespeed * dt
+        lastZIncrease = t
+    },
+    moveBackward = () => {
+        let t = now()
+        let dt = t - lastZDecrease
+        Z -= cos(yaw) * movespeed * dt
+        X -= sin(yaw) * movespeed * dt
+        lastZDecrease = t
+    },
+    strafeLeft =  () => {
+        let t = now()
+        let dt = t - lastXIncrease
+        Z += sin(-yaw) * movespeed * dt
+        X += cos(-yaw) * movespeed * dt
+        lastXIncrease = t
+    },
+    strafeRight = () => {
+        let t = now()
+        let dt = t - lastXDecrease
+        Z -= sin(-yaw) * movespeed * dt
+        X -= cos(-yaw) * movespeed * dt
+        lastXDecrease = t
+    },
+    lookLeft = () => {
+        let t = now()
+        let dt = t - lastYawIncrease
+        yaw += sensitivity * dt
+        lastYawIncrease = t
+    },
+    lookRight = () => {
+        let t = now()
+        let dt = t - lastYawDecrease
+        yaw -= sensitivity * dt
+        lastYawDecrease = t
+    },
+    lookUp = () => {
+        let t = now()
+        let dt = t - lastPitchIncrease
+        pitch += sensitivity * dt
+        lastPitchIncrease = t
+    },
+    lookDown = () => {
+        let t = now()
+        let dt = t - lastPitchDecrease
+        pitch -= sensitivity * dt
+        lastPitchDecrease = t
+    };
 
-    if (typeof obj1 !== 'object' || typeof obj2 !== 'object') {
-        return false;
-    }
-
-    let objKeys1 = Object.keys(obj1);
-    let objKeys2 = Object.keys(obj2);
-
-    if (objKeys1.length !== objKeys2.length) return false;
-
-    for (let key of objKeys1) {
-      if (!objKeys2.includes(key) || !areObjectsEqual(obj1[key], obj2[key])) {
-        return false;
-      }
-    }
-    return true;
-}
 
 
-console.log({X} == {X})
+let keyControls3d = true;
+
+let moveForwardKey = "KeyW",
+    moveBackwardKey = "KeyS",
+    strafeLeftKey = "KeyA",
+    strafeRightKey = "KeyD",
+    lookLeftKey = "KeyQ",
+    lookRightKey = "KeyE",
+    lookUpKey = "KeyZ",
+    lookDownKey = "KeyC";
+
+let tracking;
+
+
+// Initialize handlers
 
 setInterval(identifiableHandler, 0)
 
 setInterval(cameraHandler, 0)
 
 addEventListener("mousemove", (event) => {
+    // If we're tracking, update our pitch and yaw
     if (tracking) {
         pitch -= event.movementY * sensitivity
         yaw -= event.movementX * sensitivity
     }
 })
 
-addEventListener("keydown", (event) => { 
-    
-    if (event.key == "w") {
-        if (increaseZIntervalIndex == undefined) {
-            tw = now()
-            increaseZIntervalIndex = setInterval( () => {
-                let t = now();
-                let dt = t - tw;
-                Z += cos(yaw) * movespeed * dt
-                X += sin(yaw) * movespeed * dt
-                tw = t
-            }, 1)
-        }
-    }
-    if (event.key == "s") {
-        if (decreaseZIntervalIndex == undefined) {
-            ts = now()
-            decreaseZIntervalIndex = setInterval( () => {
-                let t = now()
-                let dt = t - ts
-                Z -= cos(yaw) * movespeed * dt
-                X -= sin(yaw) * movespeed * dt
-                ts = t
-            }, 1)
-        }
-    }
-    if (event.key == "a") {
-        if (increaseXIntervalIndex == undefined) {
-            ta = now()
-            increaseXIntervalIndex = setInterval( () => {
-                let t = now()
-                let dt = t - ta
-                Z += sin(-yaw) * movespeed * dt
-                X += cos(-yaw) * movespeed * dt
-                ta = t
-            }, 1)
-        }
-    }
-    
-    if (event.key == "d") {
-        if (decreaseXIntervalIndex == undefined) {
-            td = now()
-            decreaseXIntervalIndex = setInterval( () => {
-                let t = now()
-                let dt = t - td
-                Z -= sin(-yaw) * movespeed * dt
-                X -= cos(-yaw) * movespeed * dt
-                td = t
-            }, 1)
-        }
-    }
-
-    if (event.key == "q") {
-        if (increaseYawIntervalIndex == undefined) {
-            tq = now()
-            increaseYawIntervalIndex = setInterval( () => {
-                let t = now()
-                let dt = t - tq
-                yaw += sensitivity * dt
-                tq = t
-            }, 1)
-        }
-    }
-
-    if (event.key == "e") {
-        if (decreaseYawIntervalIndex == undefined) {
-            te = now()
-            decreaseYawIntervalIndex = setInterval( () => {
-                let t = now()
-                let dt = t - te
-                yaw -= sensitivity * dt
-                te = t
-            }, 1)
-        }
-    }
-
-    if (event.key == "z") {
-        if (increasePitchIntervalIndex == undefined) {
-            tz = now()
-            increasePitchIntervalIndex = setInterval( () => {
-                let t = now()
-                let dt = t - tz
-                pitch += sensitivity * dt
-                tz = t
-            }, 1)
-        }
-    }
-    
-    if (event.key == "c") {
-        if (decreasePitchIntervalIndex == undefined) {
-            tc = now()
-            decreasePitchIntervalIndex = setInterval( () => {
-                let t = now()
-                let dt = t - tc
-                pitch -= sensitivity * dt
-                tc = t
-            }, 1)
-        }
-    }
-}) 
-
-
-
-let tracking
-
-document.addEventListener('mousedown', function(event) {
+scene.addEventListener('mousedown', function(event) {
     if (event.button == 0) {
         tracking = true;
+        // Lock our pointer for easier movement, but only if we click on the background
         document.body.requestPointerLock();
     }
 });
@@ -475,48 +382,99 @@ document.addEventListener('mousedown', function(event) {
 document.addEventListener('mouseup', function(event) {
     if (event.button == 0) {
         tracking = false;
+        // Exit our pointer lock
         document.exitPointerLock();
     }
 });
 
 addEventListener("keyup", (event) => {
-    if (event.key == "w") {
-        clearInterval(increaseZIntervalIndex)
-        increaseZIntervalIndex = undefined
-    }
-
-    if (event.key == "s") {
-        clearInterval(decreaseZIntervalIndex)
-        decreaseZIntervalIndex = undefined
-    }
-    
-    if (event.key == "q") {
-        clearInterval(increaseYawIntervalIndex)
-        increaseYawIntervalIndex = undefined
-    }
-    
-    if (event.key == "e") {
-        clearInterval(decreaseYawIntervalIndex)
-        decreaseYawIntervalIndex = undefined
-    }
-    
-    if (event.key == "a") {
-        clearInterval(increaseXIntervalIndex)
-        increaseXIntervalIndex = undefined
-    }
-    
-    if (event.key == "d") {
-        clearInterval(decreaseXIntervalIndex)
-        decreaseXIntervalIndex = undefined
-    }
-
-    if (event.key == "z") {
-        clearInterval(increasePitchIntervalIndex)
-        increasePitchIntervalIndex = undefined
-    }
-    
-    if (event.key == "c") {
-        clearInterval(decreasePitchIntervalIndex)
-        decreasePitchIntervalIndex = undefined
+    // Clear the interval, and clear the interval's slot in code
+    switch (event.code) {
+        case moveForwardKey:
+            clearInterval(increaseZInterval)
+            increaseZInterval = undefined
+            break
+        case moveBackwardKey:
+            clearInterval(decreaseZInterval)
+            decreaseZInterval = undefined
+            break            
+        case strafeLeftKey:
+            clearInterval(increaseXInterval)
+            increaseXInterval = undefined
+            break
+        case strafeRightKey:
+            clearInterval(decreaseXInterval)
+            decreaseXInterval = undefined
+            break
+        case lookLeftKey:
+            clearInterval(increaseYawInterval)
+            increaseYawInterval = undefined
+            break
+        case lookRightKey:
+            clearInterval(decreaseYawInterval)
+            decreaseYawInterval = undefined
+            break
+        case lookUpKey:
+            clearInterval(increasePitchInterval)
+            increasePitchInterval = undefined
+            break
+        case lookDownKey:
+            clearInterval(decreasePitchInterval)
+            decreasePitchInterval = undefined
+            break
     }
 })
+
+addEventListener("keydown", (event) => { 
+    if (keyControls3d) switch(event.code) {
+        // For each of these, check if we already set the interval, and if not, create one
+        case moveForwardKey:
+            if (increaseZInterval == undefined) {
+                lastZIncrease = now()
+                increaseZInterval = setInterval(moveForward, 1)
+            }
+            break;
+        case moveBackwardKey:
+            if (decreaseZInterval == undefined) {
+                lastZDecrease = now()
+                decreaseZInterval = setInterval(moveBackward, 1)
+            }
+            break;
+        case strafeLeftKey:
+            if (increaseXInterval == undefined) {
+                lastXIncrease = now()
+                increaseXInterval = setInterval(strafeLeft, 1)
+            }
+            break;
+        case strafeRightKey:
+            if (decreaseXInterval == undefined) {
+                lastXDecrease = now()
+                decreaseXInterval = setInterval(strafeRight, 1)
+            }
+            break;
+        case lookLeftKey:
+            if (increaseYawInterval == undefined) {
+                lastYawIncrease = now()
+                increaseYawInterval = setInterval(lookLeft, 1)
+            }
+            break;
+        case lookRightKey:
+            if (decreaseYawInterval == undefined) {
+                lastYawDecrease = now()
+                decreaseYawInterval = setInterval(lookRight, 1)
+            }
+            break;
+        case lookUpKey:
+            if (increasePitchInterval == undefined) {
+                lastPitchIncrease = now()
+                increasePitchInterval = setInterval(lookUp, 1)
+            }
+            break;
+        case lookDownKey:
+            if (decreasePitchInterval == undefined) {
+                lastPitchDecrease = now()
+                decreasePitchInterval = setInterval(lookDown, 1)
+            }
+            break;
+    }
+}) 

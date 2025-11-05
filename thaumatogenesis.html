@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Thaumatogenesis</title>
-    <link rel="stylesheet/less" type="text/css" href="thaumatogenesis.less" />
-    <script src="https://cdn.jsdelivr.net/npm/less" ></script>
+    <!--<link rel="stylesheet/less" type="text/css" href="thaumatogenesis.less" />
+    <script src="https://cdn.jsdelivr.net/npm/less" ></script>-->
+    <link rel="stylesheet" href="thaumatogenesis.css">
 </head>
 <body>
     <div class="game-container">
@@ -20,12 +21,12 @@
                 <div class="css-renderer">
                     <div id="renderercss">
                         <div class="perspectivefar">
-                            <div class="center perspectivefar">
+                            <div class="center perspectivefar" id="scene">
                                 <div class="camera translate-in">
                                     <div class="camera main" id="camera-rotate">
                                         <div class="camera main2" id="camera-translate">
                                             <div class="camera translate-out">
-                                                <div class="scene-container render-3d" style="transform: translateY(50px);">
+                                                <div class="scene-container render-3d" style="transform: translateY(0px);">
                                                     <div class="cube render-3d">
                                                         <div class="spinimage render-3d identifiable" id="example-element" style="transform: translate3d(0, -200px, 0)">
                                                             <div class="face front">1</div>
@@ -52,6 +53,8 @@
                                                     <div class="ground"></div>
                                                 </div>
                                             </div>
+                                        </div>
+                                        <div class="camera origin render-3d" id="camera-origin" style="transform: translate3d(0, 0, 0)">
                                         </div>
                                     </div>
                                 </div>
