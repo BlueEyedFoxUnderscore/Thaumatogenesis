@@ -1,0 +1,144 @@
+@keyframes rotateY {
+  0% {
+    transform: rotate3d(0, 1, 0, 0deg);
+  }
+  25% {
+    transform: rotate3d(0, 1, 0, 90deg);
+  }
+  50% {
+    transform: rotate3d(0, 1, 0, 180deg);
+  }
+  75% {
+    transform: rotate3d(0, 1, 0, 270deg);
+  }
+  100% {
+    transform: rotate3d(0, 1, 0, 360deg);
+  }
+}
+.spinimage {
+  animation: 3s linear 1s infinite running both rotateY;
+}
+body {
+  padding: 0;
+  margin: 0;
+  width: 100vw;
+  height: 100vh;
+}
+.game-container {
+  width: 100%;
+  height: 100%;
+}
+.main-renderer-container {
+  width: 100%;
+  height: 100%;
+}
+.main-renderer {
+  width: 100%;
+  height: 100%;
+}
+.css-renderer {
+  width: 100%;
+  height: 100%;
+  background-color: orange;
+}
+#example-element {
+  transform: translate3d(0, -200px, 0);
+}
+.test.square {
+  width: 100px;
+  height: 100px;
+  position: absolute;
+  background-color: black;
+  border: 2px solid red;
+  outline: 1px solid transparent;
+}
+.face {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  backface-visibility: inherit;
+  font-size: 60px;
+  color: white;
+  transform: translateZ(100px);
+}
+.front {
+  background: rgba(90, 90, 90, 0.7);
+  transform: translateZ(50px);
+}
+.back {
+  background: rgba(0, 210, 0, 0.7);
+  transform: rotateY(180deg) translateZ(50px);
+}
+.right {
+  background: rgba(210, 0, 0, 0.7);
+  transform: rotateY(90deg) translateZ(50px);
+}
+.left {
+  background: rgba(0, 0, 210, 0.7);
+  transform: rotateY(-90deg) translateZ(50px);
+}
+.top {
+  background: rgba(210, 210, 0, 0.7);
+  transform: rotateX(90deg) translateZ(50px);
+}
+.bottom {
+  background: rgba(210, 0, 210, 0.7);
+  transform: rotateX(-90deg) translateZ(50px);
+}
+#renderercss {
+  width: 100%;
+  height: 100%;
+}
+.render-3d {
+  width: 100px;
+  height: 100px;
+  transform-style: preserve-3d;
+  margin: auto;
+}
+.perspectivefar {
+  perspective: 1500px;
+  perspective-origin: 50% 50%;
+  width: 100%;
+  height: 100vh;
+}
+.hidden {
+  visibility: hidden;
+}
+.center {
+  margin: auto;
+}
+.ground {
+  transform: translate3d(-1950px, -1600px, 0);
+  transform-style: preserve-3d;
+}
+.ground::after {
+  display: inline-block;
+  position: absolute;
+  width: 4000px;
+  height: 4000px;
+  background-image: radial-gradient(circle farthest-corner at center, red 1%, transparent 1.1%, transparent 100%), repeating-linear-gradient(to bottom, #ccc 0, #ccc 1px, transparent 1px, transparent 20px), repeating-linear-gradient(to right, #ccc 0, #ccc 1px, transparent 1px, transparent 20px);
+  background-size: 100% 100%;
+  /* Size of the grid cells */
+  content: " ";
+  transform: rotate3d(1, 0, 0, 90deg);
+  border: 10px solid red;
+  outline: 1px solid  transparent;
+}
+.camera {
+  transform-style: preserve-3d;
+}
+.camera.main {
+  transform: rotate3d(1, 0, 0, 0deg);
+}
+.camera.main2 {
+  transform: translate3d(0px, 0px, 800px);
+}
+.camera.translate-out {
+  transform: translate3d(0px, 0px, -1500px);
+}
+.camera.translate-in {
+  transform: translate3d(0px, 0px, 1500px);
+}

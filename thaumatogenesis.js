@@ -3,7 +3,23 @@ let currentSceneFlags = [];
 
 let sin = Math.sin
 let cos = Math.cos
+let tan = Math.tan
+let asin = Math.asin
+let acos = Math.acos
+let atan = Math.atan
 let now = Date.now
+let sqrt = Math.sqrt
+let abs = Math.abs
+let pi = Math.PI
+let assert = console.assert
+
+let identifiables = document.getElementsByClassName("identifiable")
+let identifiers = document.getElementsByClassName("identify")
+let identifierpath = document.getElementById("identifiers")
+let identifierProperties = [];
+let identifierBoxes = [];
+let identifierSizes = [];
+let identifierPropertySizes = [];
 
 let saveJSON = `
 {
@@ -220,28 +236,132 @@ let yaw   = 0,
 
 
 let tw, ts, tq, te, ta, td, tz, tc;
-let mouseX, mouseY;
 let movespeed = 0.5;
 let sensitivity = 0.002;
 
-console.log(true || false)
-
 function cameraHandler () {
+    pitch = (pitch > pi / 2)? pi / 2: (pitch < -pi / 2)? -pi / 2: pitch
+    yaw = yaw < 0? yaw + 2 * pi: yaw > 2 * pi? yaw - 2 * pi: yaw 
     cameratrans.setAttribute("style", `transform: translate3d(${X}px, 0, ${Z}px)`);
     camerarot.setAttribute("style", `transform: rotateX(${pitch}rad) rotateY(${-yaw}rad)`)
 }
 
+let i = 0;
+let boxesRegistered = false;
+function registerIdentifierBoxes() {
+    if (boxesRegistered) return;
+    for (const e of identifiers) {
+        identifierpath.innerHTML += `<div id="identifierbox${i}" class="identifierbox"><div class="actions"></div><div class="associations"></div><div class="names"></div><div class="properties"></div></div>`
+        log('x')
+        log(identifierpath.innerHTML)
+        identifierBoxes[i] = document.getElementById(`identifierbox${i}`)
+        identifierProperties[i] = e.children;
+        identifierSizes[i] = {topdims: {top: 0, left: 0, height: 0, width: 0}, propertydims: {width: 0}};
+        i += 1;
+    }
+    boxesRegistered = true;
+}
+
+registerIdentifierBoxes()
+
+
+
+function identifiableHandler () {
+    i = 0;
+    for (const e of identifiers) {
+        let identX = e.getAttribute("--3d-x"),
+            identY = e.getAttribute("--3d-y"),
+            identZ = e.getAttribute("--3d-z");
+
+        let dX = X - identX,
+            dY = Y - identY,
+            dZ = Z - identZ;
+
+        let dR = sqrt(dX*dX + dZ*dZ)
+        let dD = sqrt(dR*dR + dY*dY)
+        let pitch = asin(dR/dD)
+        let yaw = -asin(dZ/dR)
+
+        e.setAttribute("style", `transform: rotateY(${(yaw - pi/2) * (Math.sign(dX) > 0? 1: -1)}rad) rotateX(${pitch + pi/2}rad)`)
+        let bound = e.getBoundingClientRect();
+        let side = Math.max(bound.width, bound.height)
+        let y = (bound.top + bound.bottom)/2;
+        let x = (bound.right + bound.left)/2;
+        let rasterPoint = {x, y};
+        
+        let props = identifierBoxes[i].children[3];
+        let propsBound = props.getBoundingClientRect();
+
+        let size = Math.min(300000/dD, 300);
+
+        let prevSize = identifierSizes[i]
+        let currSize = 
+        {
+            topdims: {
+                top: y - size/2, 
+                left: x - size/2, 
+                height: size, 
+                width: size}, 
+            propertydims: {
+                width: -propsBound.width - 10
+            }
+        };
+
+        if (prevSize.topdims.top != currSize.topdims.top || 
+            prevSize.topdims.left != currSize.topdims.left || 
+            prevSize.topdims.height != currSize.topdims.height || 
+            prevSize.topdims.width != currSize.topdims.width) 
+        {
+            identifierBoxes[i].setAttribute("style", `top: ${y - size/2}px; left: ${x - size/2}px; height: ${size}px; width: ${size}px`);
+        }
+
+        if (prevSize.propertydims.width != currSize.propertydims.width) {
+            identifierBoxes[i].children[3].setAttribute("style", `right: ${-propsBound.width - 10}px`)
+            identifierBoxes[i].children[3].innerHTML = identifierProperties[0][0].innerHTML;
+        }
+
+        identifierSizes[i] = currSize
+    }
+}
+
+function areObjectsEqual(obj1, obj2) {
+    if (obj1 === obj2) return true; // Same object reference
+
+    assert(typeof(obj1) == typeof({}) && typeof(obj2) == typeof({}))
+
+    if (typeof obj1 !== 'object' || typeof obj2 !== 'object') {
+        return false;
+    }
+
+    let objKeys1 = Object.keys(obj1);
+    let objKeys2 = Object.keys(obj2);
+
+    if (objKeys1.length !== objKeys2.length) return false;
+
+    for (let key of objKeys1) {
+      if (!objKeys2.includes(key) || !areObjectsEqual(obj1[key], obj2[key])) {
+        return false;
+      }
+    }
+    return true;
+}
+
+
+console.log({X} == {X})
+
+setInterval(identifiableHandler, 0)
+
 setInterval(cameraHandler, 0)
 
 addEventListener("mousemove", (event) => {
-    console.log(event)
     if (tracking) {
-        pitch += event.movementY * sensitivity
-        yaw += event.movementX * sensitivity
+        pitch -= event.movementY * sensitivity
+        yaw -= event.movementX * sensitivity
     }
 })
 
 addEventListener("keydown", (event) => { 
+    
     if (event.key == "w") {
         if (increaseZIntervalIndex == undefined) {
             tw = now()
@@ -341,14 +461,22 @@ addEventListener("keydown", (event) => {
     }
 }) 
 
+
+
 let tracking
 
 document.addEventListener('mousedown', function(event) {
-    if(event.button == 0) tracking = true;
+    if (event.button == 0) {
+        tracking = true;
+        document.body.requestPointerLock();
+    }
 });
   
 document.addEventListener('mouseup', function(event) {
-    if (event.button == 0) tracking = false;
+    if (event.button == 0) {
+        tracking = false;
+        document.exitPointerLock();
+    }
 });
 
 addEventListener("keyup", (event) => {
