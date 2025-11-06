@@ -14,6 +14,8 @@ let sin = Math.sin,
     sign = Math.sign,
     max = Math.max,
     min = Math.min,
+    rand = Math.random,
+    floor = Math.floor,
     pi = Math.PI,
     assert = console.assert,
     log = console.log
@@ -40,6 +42,8 @@ const scene = document.getElementById("scene"),
       cameraOrigin = document.getElementById("camera-origin"),
       cameratrans = document.getElementById("camera-translate"),
       camerarot = document.getElementById("camera-rotate")
+
+const textest = document.getElementById("textest")
 
 // Save JSON (currently unused)
 let saveJSON = `
@@ -129,6 +133,18 @@ function dotProduct(x1, y1, z1, x2, y2, z2) {
     return (x1 * x2) + (y1 * y2) + (z1 * z2);
 }
 
+function getRequiredGradients(element) {
+    let wantedPoints = [];
+
+    for (point of wantedPoints) {
+        let currU = point.u
+        let currV = point.v
+
+
+        window.getComputedStyle(texHandler).transformStyle         
+    }
+}
+
 function getLookVector() {
     
     /* [markdown]
@@ -162,6 +178,61 @@ function getLookVector() {
     
     return {x: sin(yaw) * cos(pitch), y: -sin(pitch), z: cos(yaw) * cos(pitch)}
 }
+
+function texHandler() {
+    textest.setAttribute("style", `
+        background-image: radial-gradient(circle 10px at ${rand() * 100}% ${rand() * 100}%, #000000, transparent),
+        radial-gradient(circle 10px at ${rand() * 100}% ${rand() * 100}%, #FFFF00 100%, transparent),
+        radial-gradient(circle 10px at ${rand() * 100}% ${rand() * 100}%, #FF00FF 100%, transparent),
+        radial-gradient(circle 10px at ${rand() * 100}% ${rand() * 100}%, #00FF00 100%, transparent),
+        radial-gradient(circle 10px at ${rand() * 100}% ${rand() * 100}%, #000000 100%, transparent), 
+        radial-gradient(circle 10px at ${rand() * 100}% ${rand() * 100}%, #FFFF00 100%, transparent), 
+        radial-gradient(circle 10px at ${rand() * 100}% ${rand() * 100}%, #FF00FF 100%, transparent), 
+        radial-gradient(circle 10px at ${rand() * 100}% ${rand() * 100}%, #00FF00 100%, transparent), 
+        radial-gradient(circle 10px at ${rand() * 100}% ${rand() * 100}%, #000000 100%, transparent), 
+        radial-gradient(circle 10px at ${rand() * 100}% ${rand() * 100}%, #FFFF00 100%, transparent),
+        radial-gradient(circle 10px at ${rand() * 100}% ${rand() * 100}%, #FF00FF 100%, transparent), 
+        radial-gradient(circle 10px at ${rand() * 100}% ${rand() * 100}%, #00FF00 100%, transparent),
+        radial-gradient(circle 10px at ${rand() * 100}% ${rand() * 100}%, #000000 100%, transparent),
+        radial-gradient(circle 10px at ${rand() * 100}% ${rand() * 100}%, #FFFF00 100%, transparent),
+        radial-gradient(circle 10px at ${rand() * 100}% ${rand() * 100}%, #FF00FF 100%, transparent),
+        radial-gradient(circle 10px at ${rand() * 100}% ${rand() * 100}%, #00FF00 100%, transparent),
+        radial-gradient(circle 10px at ${rand() * 100}% ${rand() * 100}%, #000000 100%, transparent), 
+        radial-gradient(circle 10px at ${rand() * 100}% ${rand() * 100}%, #FFFF00 100%, transparent), 
+        radial-gradient(circle 10px at ${rand() * 100}% ${rand() * 100}%, #FF00FF 100%, transparent), 
+        radial-gradient(circle 10px at ${rand() * 100}% ${rand() * 100}%, #00FF00 100%, transparent), 
+        radial-gradient(circle 10px at ${rand() * 100}% ${rand() * 100}%, #000000 100%, transparent), 
+        radial-gradient(circle 10px at ${rand() * 100}% ${rand() * 100}%, #FFFF00 100%, transparent),
+        radial-gradient(circle 10px at ${rand() * 100}% ${rand() * 100}%, #FF00FF 100%, transparent), 
+        radial-gradient(circle 10px at ${rand() * 100}% ${rand() * 100}%, #00FF00 100%, transparent),
+        radial-gradient(circle 10px at ${rand() * 100}% ${rand() * 100}%, #000000 100%, transparent),
+        radial-gradient(circle 10px at ${rand() * 100}% ${rand() * 100}%, #FFFF00 100%, transparent),
+        radial-gradient(circle 10px at ${rand() * 100}% ${rand() * 100}%, #FF00FF 100%, transparent),
+        radial-gradient(circle 10px at ${rand() * 100}% ${rand() * 100}%, #00FF00 100%, transparent),
+        radial-gradient(circle 10px at ${rand() * 100}% ${rand() * 100}%, #000000 100%, transparent), 
+        radial-gradient(circle 10px at ${rand() * 100}% ${rand() * 100}%, #FFFF00 100%, transparent), 
+        radial-gradient(circle 10px at ${rand() * 100}% ${rand() * 100}%, #FF00FF 100%, transparent), 
+        radial-gradient(circle 10px at ${rand() * 100}% ${rand() * 100}%, #00FF00 100%, transparent), 
+        radial-gradient(circle 10px at ${rand() * 100}% ${rand() * 100}%, #000000 100%, transparent), 
+        radial-gradient(circle 10px at ${rand() * 100}% ${rand() * 100}%, #FFFF00 100%, transparent),
+        radial-gradient(circle 10px at ${rand() * 100}% ${rand() * 100}%, #FF00FF 100%, transparent), 
+        radial-gradient(circle 10px at ${rand() * 100}% ${rand() * 100}%, #00FF00 100%, transparent),
+        radial-gradient(circle 10px at ${rand() * 100}% ${rand() * 100}%, #000000 100%, transparent),
+        radial-gradient(circle 10px at ${rand() * 100}% ${rand() * 100}%, #FFFF00 100%, transparent),
+        radial-gradient(circle 10px at ${rand() * 100}% ${rand() * 100}%, #FF00FF 100%, transparent),
+        radial-gradient(circle 10px at ${rand() * 100}% ${rand() * 100}%, #00FF00 100%, transparent),
+        radial-gradient(circle 10px at ${rand() * 100}% ${rand() * 100}%, #000000 100%, transparent), 
+        radial-gradient(circle 10px at ${rand() * 100}% ${rand() * 100}%, #FFFF00 100%, transparent), 
+        radial-gradient(circle 10px at ${rand() * 100}% ${rand() * 100}%, #FF00FF 100%, transparent), 
+        radial-gradient(circle 10px at ${rand() * 100}% ${rand() * 100}%, #00FF00 100%, transparent), 
+        radial-gradient(circle 10px at ${rand() * 100}% ${rand() * 100}%, #000000 100%, transparent), 
+        radial-gradient(circle 10px at ${rand() * 100}% ${rand() * 100}%, #FFFF00 100%, transparent),
+        radial-gradient(circle 10px at ${rand() * 100}% ${rand() * 100}%, #FF00FF 100%, transparent), 
+        radial-gradient(circle 10px at ${rand() * 100}% ${rand() * 100}%, #00FF00 100%, transparent)`)
+    log(textest)
+}
+
+setInterval(texHandler, 1)
 
 function identifiableHandler() {
     i = 0;
