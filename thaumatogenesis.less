@@ -3,6 +3,7 @@
 @z1: 0;
 
 @thickness: 5;
+@perspective: 1500px;
 
 @keyframes rotateY {
     0% {
@@ -82,10 +83,6 @@ body {
     background-color: orange;
 }
 
-#example-element {
-    transform: translate3d(0, -200px, 0)
-}
-
 .test {
     &.square {
         width: 100px;
@@ -107,7 +104,6 @@ body {
     backface-visibility: inherit;
     font-size: 60px;
     color: white;
-    transform: translateZ(100px);
 }
 
 .front {
@@ -183,33 +179,19 @@ body {
             repeating-linear-gradient(to right , #ccc 0, #ccc calc(@thickness * 1px), transparent calc(@thickness * 1px), transparent 200px);
         background-size: 100px 100px; /* Size of the grid cells */
         content: " ";
-        transform: rotate3d(1, 0, 0, 90deg);
+        //transform: rotate3d(1, 0, 0, 90deg);
         border: 10px solid red;
         outline: 1px solid  transparent;
     }
-    transform: translate3d(-1950px, -1600px, 0);
+    //transform: translate3d(-1950px, -1600px, 0);
     transform-style: preserve-3d;
 }
 
 @camx: 000px;
-@camy: 300px;
+@camy: calc(50vh - 150px);
 @camz: 1500px;
-
-@camtx: 000px;
-@camty: 000px;
-@camtz: 800px;
-
 .camera {
     transform-style: preserve-3d;
-    &.main{
-        transform: rotate3d(1, 0, 0, 00deg);
-    }
-    &.main2 {
-        transform: translate3d(@camtx, @camty, @camtz)
-    }
-    &.translate-out {
-        transform: translate3d(-@camx, -@camy, -@camz)
-    }
     &.translate-in {
         transform: translate3d(@camx, @camy, @camz)
     }
@@ -274,4 +256,10 @@ body {
 
 .properties-html {
     display: none;
+}
+
+.object {
+    position: absolute;
+    top: 0px;
+    left: 0px;
 }

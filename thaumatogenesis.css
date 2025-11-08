@@ -59,9 +59,6 @@ body {
   height: 100%;
   background-color: orange;
 }
-#example-element {
-  transform: translate3d(0, -200px, 0);
-}
 .test.square {
   width: 100px;
   height: 100px;
@@ -80,7 +77,6 @@ body {
   backface-visibility: inherit;
   font-size: 60px;
   color: white;
-  transform: translateZ(100px);
 }
 .front {
   background: rgba(90, 90, 90, 0.7);
@@ -129,7 +125,6 @@ body {
   margin: auto;
 }
 .ground {
-  transform: translate3d(-1950px, -1600px, 0);
   transform-style: preserve-3d;
 }
 .ground::after {
@@ -141,24 +136,14 @@ body {
   background-size: 100px 100px;
   /* Size of the grid cells */
   content: " ";
-  transform: rotate3d(1, 0, 0, 90deg);
   border: 10px solid red;
   outline: 1px solid  transparent;
 }
 .camera {
   transform-style: preserve-3d;
 }
-.camera.main {
-  transform: rotate3d(1, 0, 0, 0deg);
-}
-.camera.main2 {
-  transform: translate3d(0px, 0px, 800px);
-}
-.camera.translate-out {
-  transform: translate3d(0px, -300px, -1500px);
-}
 .camera.translate-in {
-  transform: translate3d(0px, 300px, 1500px);
+  transform: translate3d(0px, calc(50vh - 150px), 1500px);
 }
 .identify {
   z-index: 100;
@@ -209,4 +194,9 @@ body {
 }
 .properties-html {
   display: none;
+}
+.object {
+  position: absolute;
+  top: 0px;
+  left: 0px;
 }

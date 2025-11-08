@@ -14,6 +14,7 @@ let sin = Math.sin,
     sign = Math.sign,
     max = Math.max,
     min = Math.min,
+    rand = Math.random,
     pi = Math.PI,
     assert = console.assert,
     log = console.log
@@ -90,8 +91,150 @@ function cameraHandler () {
     yaw = yaw < 0? yaw + 2 * pi: yaw > 2 * pi? yaw - 2 * pi: yaw 
 
     // Set our translation and rotation
-    cameratrans.setAttribute("style", `transform: translate3d(${X}px, 50px, ${Z}px)`);
+    cameratrans.setAttribute("style", `transform: translate3d(${X}px, 150px, ${Z}px)`);
     camerarot.setAttribute("style", `transform: rotateX(${pitch}rad) rotateY(${-yaw}rad)`)
+}
+
+function rotateX(coord, val) {
+    let x = coord.x,
+        y = coord.y,
+        z = coord.z
+    return {
+        x: x, 
+        y: y * cos(val) - z * sin(val), 
+        z: y * sin(val) + z * cos(val)
+    }
+}
+
+function rotateY(coord, val) {
+    let x = coord.x,
+        y = coord.y,
+        z = coord.z
+    return {
+        x: z * sin(val) + x * cos(val), 
+        y: y, 
+        z: z * cos(val) - x * sin(val)
+    }
+}
+
+
+function rotateZ(coord, val) {
+    let x = coord.x,
+        y = coord.y,
+        z = coord.z
+    return {
+        x: x * cos(val) - y * sin(val), 
+        y: x * sin(val) + y * sin(val), 
+        z: z
+    }
+}
+
+function translateX(coord, val) {
+    let x = coord.x,
+        y = coord.y,
+        z = coord.z
+    return {
+        x: x + val, 
+        y: y, 
+        z: z
+    }
+}
+
+function translateY(coord, val) {
+    let x = coord.x,
+        y = coord.y,
+        z = coord.z
+    return {
+        x: x, 
+        y: y + val, 
+        z: z
+    }
+}
+
+function translateZ(coord, val) {
+    let x = coord.x,
+        y = coord.y,
+        z = coord.z
+    return {
+        x: x, 
+        y: y, 
+        z: z + val
+    }
+}
+
+function toHomogeneous(coord) {
+    return {
+        x: coord.x,
+        y: coord.y,
+        z: coord.z,
+        w: 1
+    }
+}
+
+function toCartesian(coord) {
+    return {
+        x: coord.x / coord.w,
+        y: coord.y / coord.w,
+        z: coord.z / coord.w
+    }
+}
+
+function matMultiply4x4(m1, m2) {
+    /*
+        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⡭⠥⠐⠒⠒⠒⠒⠂⠤⢤⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+        ⠀⠀⠀⠀⠀⢀⣤⠖⠋⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠙⠲⣤⡀⠀⠀⠀⠀⠀
+        ⠀⠀⠀⢀⡴⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠙⢦⡀⠀⠀⠀
+        ⠀⠀⢠⠟⠀⠀⠀⠀⠀⣠⣤⣤⡀⠀⠀⠀⠀⠀⣤⣤⣄⠀⠀⠀⠀⠈⠻⡄⠀⠀
+        ⠀⣠⠋⠀⠀⠀⠀⠀⠀⣿⣿⣿⣧⠀⠀⠀⠀⣼⣿⣿⣿⠀⠀⠀⠀⠀⠀⠹⣄⠀
+        ⠀⡏⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⡟⠀⠀⠀⠀⢻⣿⣿⣿⠇⠀⠀⠀⠀⠀⠀⢹⠀
+        ⢰⠀⠀⠀⠀⠀⠀⠀⠀⠙⠛⠛⠀⠀⠀⠀⠀⠀⠛⠛⠋⠀⠀⠀⠀⠀⠀⠀⠀⡆
+        ⢸⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣠⣤⣤⣤⣤⣄⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇
+        ⠸⠀⠀⠀⠀⠀⠀⠀⣠⣴⡿⠟⠛⠋⠉⠉⠙⠛⠻⢷⣦⣄⠀⠀⠀⠀⠀⠀⠇
+        ⠀⣇⠀⠀⠀⠀⢀⣼⠟⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠻⣷⡀⠀⠀⠀⠀⣸⠀
+        ⠀⠘⣆⠀⠒⠲⣾⡃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢘⡷⠖⠒⠀⣰⠃⠀
+        ⠀⠀⠘⣦⡀⠀⠈⠳⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠺⠁⠀⠀⣴⠃⠀⠀
+        ⠀⠀⠀⠈⠳⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⠞⠁⠀⠀⠀
+        ⠀⠀⠀⠀⠀⠈⠛⠦⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣠⠴⠛⠁⠀⠀⠀⠀⠀
+        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠓⠒⠠⠤⠤⠤⠤⠄⠒⠚⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀
+    */
+
+    let ax1 = m1[ 0], ax2 = m1[ 1], ax3 = m1[ 2], ax4 = m1[ 3],
+        ay1 = m1[ 4], ay2 = m1[ 5], ay3 = m1[ 6], ay4 = m1[ 7],
+        az1 = m1[ 8], az2 = m1[ 9], az3 = m1[10], az4 = m1[11],
+        aw1 = m1[12], aw2 = m1[13], aw3 = m1[14], aw4 = m1[15]
+    let bx1 = m2[ 0], bx2 = m2[ 1], bx3 = m2[ 2], bx4 = m2[ 3],
+        by1 = m2[ 4], by2 = m2[ 5], by3 = m2[ 6], by4 = m2[ 7],
+        bz1 = m2[ 8], bz2 = m2[ 9], bz3 = m2[10], bz4 = m2[11],
+        bw1 = m2[12], bw2 = m2[13], bw3 = m2[14], bw4 = m2[15]
+    return [
+        ax1 * bx1 + ax2 * by1 + ax3 * bz1 + ax4 * bw1,  ax1 * bx2 + ax2 * by2 + ax3 * bz2 + ax4 * bw2,  ax1 * bx3 + ax2 * by3 + ax3 * bz3 + ax4 * bw3,  ax1 * bx4 + ax2 * by4 + ax3 * bz4 + ax4 * bw4,
+        ay1 * bx1 + ay2 * by1 + ay3 * bz1 + ay4 * bw1,  ay1 * bx2 + ay2 * by2 + ay3 * bz2 + ay4 * bw2,  ay1 * bx3 + ay2 * by3 + ay3 * bz3 + ay4 * bw3,  ay1 * bx4 + ay2 * by4 + ay3 * bz4 + ay4 * bw4,
+        az1 * bx1 + az2 * by1 + az3 * bz1 + az4 * bw1,  az1 * bx2 + az2 * by2 + az3 * bz2 + az4 * bw2,  az1 * bx3 + az2 * by3 + az3 * bz3 + az4 * bw3,  az1 * bx4 + az2 * by4 + az3 * bz4 + az4 * bw4,
+        aw1 * bx1 + aw2 * by1 + aw3 * bz1 + aw4 * bw1,  aw1 * bx2 + aw2 * by2 + aw3 * bz2 + aw4 * bw2,  aw1 * bx3 + aw2 * by3 + aw3 * bz3 + aw4 * bw3,  aw1 * bx4 + aw2 * by4 + aw3 * bz4 + aw4 * bw4,
+    ]
+}
+
+function getTotalTransform(element) {
+    let runningTransform = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
+    let transform
+    let targetMatrix, targetMatrixStr, targetMatrixArr, targetMatrixNum
+    while(element.id != "camera-translate") {
+        transform = window.getComputedStyle(element).transform
+        log(transform)
+        if (transform != "none") {
+            targetMatrix = transform
+            targetMatrixStr = targetMatrix.substring(9, targetMatrix.length-2)
+            let k = let
+            targetMatrixArr = targetMatrixStr.split(",")
+            targetMatrixArr.forEach((val,ind) => {targetMatrixArr[ind]=+ +val});
+            targetMatrix = matMultiply4x4(targetMatrix, targetMatrixArr)
+        }
+        element = element.parentElement
+    }
+}
+
+function get6DOFPos(element) {
+
 }
 
 let i = 0;
@@ -224,7 +367,7 @@ function identifiableHandler() {
         */
         let dR = sqrt(dX*dX + dZ*dZ)
         let dD = sqrt(dR*dR + dY*dY)
-        let pitch2 = (asin(dR/dD)) * sign(dY)
+        let pitch2 = -(asin(dR/dD)) * sign(dY)
         let yaw2 = (asin(dZ/dR) + pi/2) * sign(dX) * -1
 
         // Set our 3d box's rotation and translation.
@@ -242,7 +385,7 @@ function identifiableHandler() {
         let propsBound = props.getBoundingClientRect();
 
         // Get our 2d ident box's desired size
-        let size = min(300000/dD, 300);
+        let size = min(150000/dD, 300);
 
         // Get our previous and current size tables
         let prevSize = identifierSizes[i]
