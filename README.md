@@ -52,3 +52,7 @@ Nowhere (yet). And I wouldn't expect you to since, well, this is just a test sce
 2) Implement Surface Stable Fractal Dithering
 3) Add textures
 4) Add OpenGL renderer
+
+## Patchnotes:
+
+- Removed faulty let
