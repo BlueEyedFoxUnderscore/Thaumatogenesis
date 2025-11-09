@@ -55,4 +55,8 @@ Nowhere (yet). And I wouldn't expect you to since, well, this is just a test sce
 
 ## Patchnotes:
 
-- Removed faulty let
+- Added utility functions toMatrix3d, fromMatrix3d (thaumatogenesis.js)
+    - function toMatrix3d: convert \[int\] to CSS-compatible matrix3d transform string
+    - function fromMatrix3d: convert CSS-compatible matrix3d transform string to \[int\]
+- Added utility class transform-origin (thaumatogenesis.less, thaumatogenesis.css)
+    - ! IMPORTANT ! Do not apply transforms outside of transform-origin. Doing so may cause unintuitive rotations and translations. Witin a transform-origin environment, transforms are centered on the scene origin: (0, 0, 0).

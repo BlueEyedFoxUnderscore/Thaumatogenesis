@@ -143,7 +143,7 @@ body {
   transform-style: preserve-3d;
 }
 .camera.translate-in {
-  transform: translate3d(0px, calc(50vh - 150px), 1500px);
+  transform: translate3d(0px, calc(50vh - 100px), 1500px);
 }
 .identify {
   z-index: 100;
@@ -199,4 +199,11 @@ body {
   position: absolute;
   top: 0px;
   left: 0px;
+}
+.transform-origin {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  height: 0px;
+  width: 0px;
 }
