@@ -188,8 +188,6 @@ Also, who decided transforms would apply __from the right to the left?!!__ >::(
 }
 
 .render-3d {
-    width: 100px;
-    height: 100px;
     transform-style: preserve-3d;
     margin: auto;
 }
@@ -233,7 +231,8 @@ Also, who decided transforms would apply __from the right to the left?!!__ >::(
 }
 
 @camx: 000px;
-@camy: calc(50vh - 100px);
+// Figured out why I needed that -100px, had to account for scene-container. Fixed
+@camy: calc(50vh);
 @camz: @perspective;
 .camera {
     transform-style: preserve-3d;

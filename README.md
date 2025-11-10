@@ -55,4 +55,28 @@ Nowhere (yet). And I wouldn't expect you to since, well, this is just a test sce
 
 ## Patchnotes:
 
-- Merged (a) and (b) versions
+- Added Oh So Many Matrices
+    - Added rotation matrices (x), (y), (z)
+    - Added translation matrix (x, y, z)
+    - Added shear matrix (xy, xz, yx, yz, zx, zy)
+    - Added scale matrix (x, y, z)
+    - Added identity matrix ()
+    - Added zero matrix ()
+    - Added transpose function (mat)
+- Fixed getTotalTransform
+    - Transforms now apply in the correct order
+    - Matrixes are no longer cut off at the last digit
+- Fixed camera to always start at origin and not shift based on view size
+    - In JavaScript, the translation of the camera is adjusted based on viewwidth
+- Fixed perspective
+- Fixed scene-container not being locked at zero
+    - .object CSS and Less classes now have height: 0px and width: 0px instead of height: 100px and width: 100px
+- Remade test-cube to be more consistent with transforms
+    - The cube now uses ::after to represent the faces and the face object itself to apply transforms.
+- Commented code
+- Added extra matrix functions
+    - Added transpose
+    - Added toHomogenous, toCartesian
+    - Added multiplication of a vector by a matrix and a matrix by a vector
+- Set up a transform test
+- Fixed fromMatrix3d messing up the last digit of the matrix

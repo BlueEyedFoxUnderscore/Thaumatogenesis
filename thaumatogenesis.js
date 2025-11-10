@@ -36,6 +36,66 @@ let identifierProperties = [],
     identifierSizes = [],
     identifierPropertySizes = [];
 
+// Common matrices
+let zeroMatrix  = ()        => [0, 0, 0, 0, 
+                                0, 0, 0, 0, 
+                                0, 0, 0, 0, 
+                                0, 0, 0, 0, ],
+                                
+    identMatrix = ()        => [1, 0, 0, 0, 
+                                0, 1, 0, 0, 
+                                0, 0, 1, 0, 
+                                0, 0, 0, 1, ],
+
+    transMatrix = (x, y, z) => [1, 0, 0, x, 
+                                0, 1, 0, y, 
+                                0, 0, 1, z, 
+                                0, 0, 0, 1, ],
+
+    scaleMatrix = (x, y, z) => [x, 0, 0, 0, 
+                                0, y, 0, 0, 
+                                0, 0, z, 0, 
+                                0, 0, 0, 1, ],
+    
+    scaleAllMatrix = (a)    => [a, 0, 0, 0, 
+                                0, a, 0, 0, 
+                                0, 0, a, 0, 
+                                0, 0, 0, 1, ],
+
+    rotXMatrix  = (theta)   => [1,          0,          0, 0, 
+                                0, cos(theta), sin(theta), 0, 
+                                0,-sin(theta), cos(theta), 0, 
+                                0,          0,          0, 1, ],
+
+    rotYMatrix  = (theta)   => [cos(theta), 0,-sin(theta), 0, 
+                                0,          1, 0,          0, 
+                                sin(theta), 0, cos(theta), 0,
+                                0,          0, 0,          1, ],
+
+    rotZMatrix  = (theta)   => [cos(theta),-sin(theta), 0, 0, 
+                                sin(theta), cos(theta), 0, 0, 
+                                0,          0,          1, 0,
+                                0,          0,          0, 1, ],
+    from2d = (matrix2) => [
+        matrix2[0], matrix2[1], 0, matrix2[4],
+        matrix2[2], matrix2[3], 0, matrix2[5],
+        0, 0, 1, 0,
+        0, 0, 0, 1
+    ],
+
+    shearMatrix = 
+    (xy,xz,yx,yz,zx,zy)     => [ 1, xy, xz, 0, 
+                                yx,  1, yz, 0, 
+                                zx, zy,  1, 0,
+                                 0,  0,  0, 1, ],
+
+    transposeMatrix = (matrix) => [
+        matrix[0], matrix[4], matrix[8 ], matrix[12],
+        matrix[1], matrix[5], matrix[9 ], matrix[13],
+        matrix[2], matrix[6], matrix[10], matrix[15],
+        matrix[3], matrix[7], matrix[11], matrix[16],
+    ]
+
 // Scene and camera
 const scene = document.getElementById("scene"),
       cameraOrigin = document.getElementById("camera-origin"),
@@ -91,7 +151,7 @@ function cameraHandler () {
     yaw = yaw < 0? yaw + 2 * pi: yaw > 2 * pi? yaw - 2 * pi: yaw 
 
     // Set our translation and rotation
-    cameratrans.setAttribute("style", `transform: translate3d(${X}px, 150px, ${Z}px)`);
+    cameratrans.setAttribute("style", `transform: translate3d(calc(${X}px + 50vw), 150px, ${Z}px)`);
     camerarot.setAttribute("style", `transform: rotateX(${pitch}rad) rotateY(${-yaw}rad)`)
 }
 
@@ -211,9 +271,12 @@ function matMultiply4x4(m1, m2) {
 }
 
 function fromMatrix3d(transform) {
-    let matrix = []
-    transform.substring(9, targetMatrix.length-2).split(",").forEach((val,ind) => {matrix[ind]=+ +val});
-    return matrix
+    return transform.substring(9, transform.length-1).split(",").map((val) => + +val);
+}
+
+function fromMatrix2d(transform) {
+    return from2d(transform.substring(7, transform.length-1).split(",").map((val) => + +val))
+
 }
 
 function toMatrix3d(transform) {
@@ -222,23 +285,30 @@ function toMatrix3d(transform) {
 
 function getTotalTransform(element) {
     // This is our identity matrix. It will be transformed into our total transform over time.
-    let runningTransform = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
+    let runningTransform = identMatrix()
     let transform
-    let targetMatrix, targetMatrixStr, targetMatrixArr, targetMatrixNum
     while(element.id != "camera-translate") {
         transform = window.getComputedStyle(element).transform
-        log(transform)
-        if (transform != "none") {
-            targetMatrix = transform
-            targetMatrixStr = targetMatrix.substring(9, targetMatrix.length-2)
-            targetMatrixArr = targetMatrixStr.split(",")
-            targetMatrixArr.forEach((val,ind) => {targetMatrixArr[ind]=+ +val});
-            runningTransform = matMultiply4x4(runningTransform, targetMatrixArr)
-        }
+        if (transform.startsWith("matrix3d")) if (transform != "none") runningTransform = matMultiply4x4(runningTransform, fromMatrix3d(transform))
+        else; else if (transform.startsWith("matrix")) if (transform != "none") runningTransform = matMultiply4x4(runningTransform, fromMatrix2d(transform))
         element = element.parentElement
     }
     return runningTransform;
 }
+
+markers.innerHTML += '<div id="mark1"></div>'
+    document.getElementById("mark1").setAttribute("style", "min-height: 100px; min-width: 100px; background-color: white; right: 0; top: 0; position: absolute;")
+
+log(toMatrix3d(getTotalTransform(document.getElementById("transformtest"))))
+log(window.getComputedStyle(document.getElementById("transformtest")).transform)
+log(window.getComputedStyle(document.getElementById("transformtest").parentElement).transform)
+log(window.getComputedStyle(document.getElementById("transformtest").parentElement.parentElement).transform)
+log(window.getComputedStyle(document.getElementById("transformtest").parentElement.parentElement.parentElement).transform)
+log(window.getComputedStyle(document.getElementById("transformtest").parentElement.parentElement.parentElement.parentElement).transform)
+
+setTimeout(setInterval(() => {
+    markers.setAttribute("style", `transform: ${toMatrix3d(getTotalTransform(document.getElementById("transformtest")))};`)
+}, 1), 100)
 
 function get6DOFPos(element) {
 
