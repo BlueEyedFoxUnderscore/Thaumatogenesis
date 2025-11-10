@@ -50,7 +50,7 @@
 }
 
 .spinimage {
-    animation: 3s linear 1s infinite running both rotateY;
+    animation: 1s linear 1s infinite running both rotateY;
 }
 
 body {
@@ -179,7 +179,7 @@ body {
             repeating-linear-gradient(to right , #ccc 0, #ccc calc(@thickness * 1px), transparent calc(@thickness * 1px), transparent 200px);
         background-size: 100px 100px; /* Size of the grid cells */
         content: " ";
-        //transform: rotate3d(1, 0, 0, 90deg);
+        transform: translateY(2000px) translateX(2000px) rotate3d(1, 0, 0, 90deg);
         border: 10px solid red;
         outline: 1px solid  transparent;
     }
@@ -188,7 +188,7 @@ body {
 }
 
 @camx: 000px;
-@camy: calc(50vh - 150px);
+@camy: calc(50vh - 100px);
 @camz: 1500px;
 .camera {
     transform-style: preserve-3d;
@@ -262,4 +262,6 @@ body {
     position: absolute;
     top: 0px;
     left: 0px;
+    height: 0px;
+    width: 0px;
 }

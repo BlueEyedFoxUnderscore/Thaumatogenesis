@@ -55,4 +55,6 @@ Nowhere (yet). And I wouldn't expect you to since, well, this is just a test sce
 
 ## Patchnotes:
 
-- Removed faulty let
+- Added comments in CSS
+- Altered test cube to use more consistent transforms
+- Added functions to multiply row- and column-vectors by 4x4 matrices

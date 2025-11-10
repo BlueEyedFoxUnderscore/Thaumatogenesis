@@ -179,25 +179,21 @@ function toCartesian(coord) {
     }
 }
 
-function matMultiply4x4(m1, m2) {
-    /*
-        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⡭⠥⠐⠒⠒⠒⠒⠂⠤⢤⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-        ⠀⠀⠀⠀⠀⢀⣤⠖⠋⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠙⠲⣤⡀⠀⠀⠀⠀⠀
-        ⠀⠀⠀⢀⡴⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠙⢦⡀⠀⠀⠀
-        ⠀⠀⢠⠟⠀⠀⠀⠀⠀⣠⣤⣤⡀⠀⠀⠀⠀⠀⣤⣤⣄⠀⠀⠀⠀⠈⠻⡄⠀⠀
-        ⠀⣠⠋⠀⠀⠀⠀⠀⠀⣿⣿⣿⣧⠀⠀⠀⠀⣼⣿⣿⣿⠀⠀⠀⠀⠀⠀⠹⣄⠀
-        ⠀⡏⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⡟⠀⠀⠀⠀⢻⣿⣿⣿⠇⠀⠀⠀⠀⠀⠀⢹⠀
-        ⢰⠀⠀⠀⠀⠀⠀⠀⠀⠙⠛⠛⠀⠀⠀⠀⠀⠀⠛⠛⠋⠀⠀⠀⠀⠀⠀⠀⠀⡆
-        ⢸⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣠⣤⣤⣤⣤⣄⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇
-        ⠸⠀⠀⠀⠀⠀⠀⠀⣠⣴⡿⠟⠛⠋⠉⠉⠙⠛⠻⢷⣦⣄⠀⠀⠀⠀⠀⠀⠇
-        ⠀⣇⠀⠀⠀⠀⢀⣼⠟⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠻⣷⡀⠀⠀⠀⠀⣸⠀
-        ⠀⠘⣆⠀⠒⠲⣾⡃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢘⡷⠖⠒⠀⣰⠃⠀
-        ⠀⠀⠘⣦⡀⠀⠈⠳⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠺⠁⠀⠀⣴⠃⠀⠀
-        ⠀⠀⠀⠈⠳⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⠞⠁⠀⠀⠀
-        ⠀⠀⠀⠀⠀⠈⠛⠦⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣠⠴⠛⠁⠀⠀⠀⠀⠀
-        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠓⠒⠠⠤⠤⠤⠤⠄⠒⠚⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀
-    */
+function transposeVector(m1, v1) {
+    return [m1[ 0] * v1[0] + m1[ 4] * v1[1] + m1[ 8] * v1[2] + m1[12] * v1[3], 
+            m1[ 1] * v1[0] + m1[ 5] * v1[1] + m1[ 9] * v1[2] + m1[13] * v1[3], 
+            m1[ 2] * v1[0] + m1[ 6] * v1[1] + m1[10] * v1[2] + m1[14] * v1[3], 
+            m1[ 3] * v1[0] + m1[ 7] * v1[1] + m1[11] * v1[2] + m1[15] * v1[3]]
+}
 
+function transformVector(m1, v1) {
+    return [m1[ 0] * v1[0] + m1[ 1] * v1[1] + m1[ 2] * v1[2] + m1[ 3] * v1[3], 
+            m1[ 4] * v1[0] + m1[ 5] * v1[1] + m1[ 6] * v1[2] + m1[ 7] * v1[3], 
+            m1[ 8] * v1[0] + m1[ 9] * v1[1] + m1[10] * v1[2] + m1[11] * v1[3], 
+            m1[12] * v1[0] + m1[13] * v1[1] + m1[14] * v1[2] + m1[15] * v1[3]]
+}
+
+function matMultiply4x4(m1, m2) {
     let ax1 = m1[ 0], ax2 = m1[ 1], ax3 = m1[ 2], ax4 = m1[ 3],
         ay1 = m1[ 4], ay2 = m1[ 5], ay3 = m1[ 6], ay4 = m1[ 7],
         az1 = m1[ 8], az2 = m1[ 9], az3 = m1[10], az4 = m1[11],
@@ -226,7 +222,7 @@ function getTotalTransform(element) {
             targetMatrixStr = targetMatrix.substring(9, targetMatrix.length-2)
             targetMatrixArr = targetMatrixStr.split(",")
             targetMatrixArr.forEach((val,ind) => {targetMatrixArr[ind]=+ +val});
-            targetMatrix = matMultiply4x4(targetMatrix, targetMatrixArr)
+            runningTransform = matMultiply4x4(runningTransform, targetMatrixArr)
         }
         element = element.parentElement
     }
