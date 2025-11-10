@@ -210,7 +210,18 @@ function matMultiply4x4(m1, m2) {
     ]
 }
 
+function fromMatrix3d(transform) {
+    let matrix = []
+    transform.substring(9, targetMatrix.length-2).split(",").forEach((val,ind) => {matrix[ind]=+ +val});
+    return matrix
+}
+
+function toMatrix3d(transform) {
+    return `matrix3d(${""+transform})`
+}
+
 function getTotalTransform(element) {
+    // This is our identity matrix. It will be transformed into our total transform over time.
     let runningTransform = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
     let transform
     let targetMatrix, targetMatrixStr, targetMatrixArr, targetMatrixNum
@@ -226,6 +237,7 @@ function getTotalTransform(element) {
         }
         element = element.parentElement
     }
+    return runningTransform;
 }
 
 function get6DOFPos(element) {
