@@ -231,7 +231,6 @@ Also, who decided transforms would apply __from the right to the left?!!__ >::(
 }
 
 @camx: 000px;
-// Figured out why I needed that -100px, had to account for scene-container. Fixed
 @camy: calc(50vh);
 @camz: @perspective;
 .camera {
@@ -316,4 +315,9 @@ Also, who decided transforms would apply __from the right to the left?!!__ >::(
     left: 0px;
     height: 0px;
     width: 0px; 
+}
+
+
+#transformtest {
+    background-image: radial-gradient(circle farthest-corner at 50px 50px, white 4px, transparent 4px);
 }

@@ -15,6 +15,7 @@ let sin = Math.sin,
     max = Math.max,
     min = Math.min,
     rand = Math.random,
+    log2 = Math.log2,
     pi = Math.PI,
     assert = console.assert,
     log = console.log
@@ -23,9 +24,9 @@ let sin = Math.sin,
 let yaw   = 0, 
     pitch = 0, 
     roll  = 0, 
-    Z     = 0, 
-    Y     = 0, 
-    X     = 0;
+    cameraZ     = 0, 
+    cameraY     = 0, 
+    cameraX     = 0;
 
 // Identifiables and related
 const identifiables = document.getElementsByClassName("identifiable"),
@@ -96,6 +97,14 @@ let zeroMatrix  = ()        => [0, 0, 0, 0,
         matrix[3], matrix[7], matrix[11], matrix[16],
     ]
 
+Function.prototype.repeat = function (times) {
+    return (...args) => 
+    {
+        for(let i = 0; i < times; i++) args = [this(...args)]
+        return args
+    }
+}
+
 // Scene and camera
 const scene = document.getElementById("scene"),
       cameraOrigin = document.getElementById("camera-origin"),
@@ -111,6 +120,7 @@ let saveJSON = `
     }
 }
 `
+
 
 // Verify all components of save are present and paresable
 function verifySaveIntegrity(save) {
@@ -151,7 +161,7 @@ function cameraHandler () {
     yaw = yaw < 0? yaw + 2 * pi: yaw > 2 * pi? yaw - 2 * pi: yaw 
 
     // Set our translation and rotation
-    cameratrans.setAttribute("style", `transform: translate3d(calc(${X}px + 50vw), 150px, ${Z}px)`);
+    cameratrans.setAttribute("style", `transform: translate3d(calc(${cameraX}px + 50vw), 150px, ${cameraZ}px)`);
     camerarot.setAttribute("style", `transform: rotateX(${pitch}rad) rotateY(${-yaw}rad)`)
 }
 
@@ -223,30 +233,21 @@ function translateZ(coord, val) {
 }
 
 function toHomogeneous(coord) {
-    return {
-        x: coord.x,
-        y: coord.y,
-        z: coord.z,
-        w: 1
-    }
+    return [coord[0], coord[1], coord[2], 1]
 }
 
 function toCartesian(coord) {
-    return {
-        x: coord.x / coord.w,
-        y: coord.y / coord.w,
-        z: coord.z / coord.w
-    }
+    return [coord[0] / coord[3], coord[1] / coord[3], coord[2] / coord[3]]
 }
 
-function transposeVector(m1, v1) {
+function rightMultiplyVector(m1, v1) {
     return [m1[ 0] * v1[0] + m1[ 4] * v1[1] + m1[ 8] * v1[2] + m1[12] * v1[3], 
             m1[ 1] * v1[0] + m1[ 5] * v1[1] + m1[ 9] * v1[2] + m1[13] * v1[3], 
             m1[ 2] * v1[0] + m1[ 6] * v1[1] + m1[10] * v1[2] + m1[14] * v1[3], 
             m1[ 3] * v1[0] + m1[ 7] * v1[1] + m1[11] * v1[2] + m1[15] * v1[3]]
 }
 
-function transformVector(m1, v1) {
+function leftMultiplyVector(m1, v1) {
     return [m1[ 0] * v1[0] + m1[ 1] * v1[1] + m1[ 2] * v1[2] + m1[ 3] * v1[3], 
             m1[ 4] * v1[0] + m1[ 5] * v1[1] + m1[ 6] * v1[2] + m1[ 7] * v1[3], 
             m1[ 8] * v1[0] + m1[ 9] * v1[1] + m1[10] * v1[2] + m1[11] * v1[3], 
@@ -296,23 +297,69 @@ function getTotalTransform(element) {
     return runningTransform;
 }
 
+function uvElementToWorld(elm, u, v) {
+    let transform = getTotalTransform(elm)
+    let vector = [u, v, 0, 1]
+    let transformedCoord = rightMultiplyVector(transform, vector)
+    return toCartesian(transformedCoord)
+}
+
+function toCamera(elm, u, v) {
+    let transformedUV = uvElementToWorld(elm, u, v)
+    return [cameraX - transformedUV[0], cameraY - transformedUV[1], cameraZ - transformedUV[2]]
+}
+
+function distToCamera(elm, u, v) {
+    return pythag(toCamera(elm, u, v))
+}
+
+function pythag(vec) {
+    return sqrt(vec.reduce((x,y) => x + y * y, 0))
+}
+
 markers.innerHTML += '<div id="mark1"></div>'
     document.getElementById("mark1").setAttribute("style", "min-height: 100px; min-width: 100px; background-color: white; right: 0; top: 0; position: absolute;")
 
-log(toMatrix3d(getTotalTransform(document.getElementById("transformtest"))))
-log(window.getComputedStyle(document.getElementById("transformtest")).transform)
-log(window.getComputedStyle(document.getElementById("transformtest").parentElement).transform)
-log(window.getComputedStyle(document.getElementById("transformtest").parentElement.parentElement).transform)
-log(window.getComputedStyle(document.getElementById("transformtest").parentElement.parentElement.parentElement).transform)
-log(window.getComputedStyle(document.getElementById("transformtest").parentElement.parentElement.parentElement.parentElement).transform)
-
 setTimeout(setInterval(() => {
-    markers.setAttribute("style", `transform: ${toMatrix3d(getTotalTransform(document.getElementById("transformtest")))};`)
+    let vec = uvElementToWorld(document.getElementById("transformtest"), -50, -50)
+    markers.setAttribute("style", `transform: translate3d(${vec[0]}px, ${vec[1]}px, ${vec[2]}px);`)
 }, 1), 100)
 
-function get6DOFPos(element) {
+const fidelity = 100
 
+function toGradients(u, v, centers, radii) {
+    return radii.reduce((valPrev, valNew, ind, arr) => valPrev + ` radial-gradient(circle farthest-corner at ${u + centers[ind]}, ${v + centers[ind]}, white ${radii[ind]}, transparent ${radii[ind]})`, "")
 }
+
+const levels = 1;
+let fractalGenerator = [[0, 0], [0.5, 0.5], [0.5, 0], [0, 0.5]];
+const nodeConfig = fractalize.repeat(levels)(fractalGenerator)
+log(nodeConfig)
+
+function fractalize(generator) {
+    return generator.map((x) => fractalGenerator.map((y) => [x[0] / 2 + y[0], x[1] / 2 + y[1]])).flat(1)
+}
+
+function generateSegment(u, v, level, partial) {
+    let fullLevelCenters = [[0, 0], [1, 1], [1, 0], [0, 1]];
+    let partialLevelCenters = [...nodeConfig];
+    let currentIndex
+    let radii = partialLevelCenters.map(() => (++currentIndex, (partial * nodeConfig.length) - currentIndex)); 
+}
+
+function generateRequiredGradients(elm) {
+    let totalWidth = elm.offsetWidth,
+        totalHeight = elm.offsetHeight
+    let startPos = {u: fidelity/2, v: fidelity/2}
+    let distance = distToCamera(elm, startPos.u, startPos.v)
+    let fractalLevel = floor(log2(1 / distance) / fidelity)
+    let partialLevel = (distance - 1 << floor(log2(1 / distance)))
+    let stepU = fractalLevel * fidelity
+    while (startPos.u < totalWidth) {
+
+    }
+}
+
 
 let i = 0;
 let boxesRegistered = false;
@@ -393,9 +440,9 @@ function identifiableHandler() {
             identZ = e.getAttribute("--3d-z");
 
         // Get distance to camera
-        let dX = X - identX,
-            dY = Y - identY,
-            dZ = Z - identZ;
+        let dX = cameraX - identX,
+            dY = cameraY - identY,
+            dZ = cameraZ - identZ;
 
         // Get our look vector.
 
@@ -511,29 +558,29 @@ let moveForward = () =>
     {
         let t = now();
         let dt = t - lastZIncrease;
-        Z += cos(yaw) * movespeed * dt
-        X += sin(yaw) * movespeed * dt
+        cameraZ += cos(yaw) * movespeed * dt
+        cameraX += sin(yaw) * movespeed * dt
         lastZIncrease = t
     },
     moveBackward = () => {
         let t = now()
         let dt = t - lastZDecrease
-        Z -= cos(yaw) * movespeed * dt
-        X -= sin(yaw) * movespeed * dt
+        cameraZ -= cos(yaw) * movespeed * dt
+        cameraX -= sin(yaw) * movespeed * dt
         lastZDecrease = t
     },
     strafeLeft =  () => {
         let t = now()
         let dt = t - lastXIncrease
-        Z += sin(-yaw) * movespeed * dt
-        X += cos(-yaw) * movespeed * dt
+        cameraZ += sin(-yaw) * movespeed * dt
+        cameraX += cos(-yaw) * movespeed * dt
         lastXIncrease = t
     },
     strafeRight = () => {
         let t = now()
         let dt = t - lastXDecrease
-        Z -= sin(-yaw) * movespeed * dt
-        X -= cos(-yaw) * movespeed * dt
+        cameraZ -= sin(-yaw) * movespeed * dt
+        cameraX -= cos(-yaw) * movespeed * dt
         lastXDecrease = t
     },
     lookLeft = () => {
