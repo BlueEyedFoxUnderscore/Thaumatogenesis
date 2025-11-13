@@ -1,6 +1,9 @@
 "use strict";
 let currentSceneFlags = [];
 
+import {Matrix} from "./matrices.js";
+
+
 // Aliased functions
 let sin = Math.sin,
     cos = Math.cos,
@@ -16,6 +19,8 @@ let sin = Math.sin,
     min = Math.min,
     rand = Math.random,
     log2 = Math.log2,
+    floor = Math.floor,
+    ceil = Math.ceil,
     pi = Math.PI,
     assert = console.assert,
     log = console.log
@@ -306,11 +311,22 @@ function uvElementToWorld(elm, u, v) {
 
 function toCamera(elm, u, v) {
     let transformedUV = uvElementToWorld(elm, u, v)
-    return [cameraX - transformedUV[0], cameraY - transformedUV[1], cameraZ - transformedUV[2]]
+    return [cameraX + transformedUV[0], cameraY + transformedUV[1], cameraZ + transformedUV[2]]
 }
 
 function distToCamera(elm, u, v) {
     return pythag(toCamera(elm, u, v))
+}
+function distToCameraArr(elm, uv) {
+    return pythag(toCamera(elm, uv[0], uv[1]))
+}
+
+function distToCameraProvider(elm) {
+    let transform = getTotalTransform(elm)
+    return (u, v) => {
+        let transformedUV = toCartesian(rightMultiplyVector(transform, [u, v, 0, 1]))
+        return pythag([cameraX - transformedUV[0], cameraY - transformedUV[1], cameraZ - transformedUV[2]])
+    }
 }
 
 function pythag(vec) {
@@ -318,46 +334,139 @@ function pythag(vec) {
 }
 
 markers.innerHTML += '<div id="mark1"></div>'
-    document.getElementById("mark1").setAttribute("style", "min-height: 100px; min-width: 100px; background-color: white; right: 0; top: 0; position: absolute;")
+document.getElementById("mark1").setAttribute("style", "min-height: 100px; min-width: 100px; background-color: white; right: 0; top: 0; position: absolute;")
 
 setTimeout(setInterval(() => {
     let vec = uvElementToWorld(document.getElementById("transformtest"), -50, -50)
     markers.setAttribute("style", `transform: translate3d(${vec[0]}px, ${vec[1]}px, ${vec[2]}px);`)
+    let elm = document.getElementById("mark1")
+    let startPos = {u: 0, v: 0}
+    let distance = distToCamera(elm, startPos.u, startPos.v)
+    let fractalLevel = floor(-log2(fidelity/distance))
+    let partialLevel = (distance/fidelity - (2 ** fractalLevel))/(2 ** fractalLevel)
+    document.getElementById("mark1").setAttribute("style", `min-height: 100px; min-width: 100px; background-color: white; right: 0; top: 0; position: absolute; background-image: ${generateRequiredGradients(elm)}, radial-gradient(circle farthest-corner at ${findClosest(elm)[0] + 100}px ${findClosest(elm)[1] - 100}px, red 100px, transparent 100px)`)
 }, 1), 100)
 
-const fidelity = 100
+const fidelity = 2,
+      dotScale = 1.5
 
 function toGradients(u, v, centers, radii) {
-    return radii.reduce((valPrev, valNew, ind, arr) => valPrev + ` radial-gradient(circle farthest-corner at ${u + centers[ind]}, ${v + centers[ind]}, white ${radii[ind]}, transparent ${radii[ind]})`, "")
+    let rad = [...radii]
+    return rad.reduce((valPrev, valNew, ind, arr) => valPrev + `, radial-gradient(circle farthest-corner at ${u + centers[ind][0]}px ${v + centers[ind][1]}px, black ${valNew}px, transparent ${valNew}px)`, ``);
 }
+
+const guesses = 10
+
+function binSearch(provider, range) {
+    let i;
+    let guess = range/2;
+    let prevGuess = 0;
+    let error = provider(guess);
+    let prevError = provider(0);
+    for (i = 0; i < guesses; ++i) {
+        length = (2 ** -i) * range/4
+        let saveGuess = guess;
+        if (prevError < error) {
+            guess += length * sign(guess - prevGuess)
+        } else guess -= length * sign(guess - prevGuess)
+        prevGuess = saveGuess
+        error = provider(guess);
+        prevError = provider(guess);
+        log(prevError)
+        log(guess)
+        log(error)
+    }
+
+}
+
+function cross(a, b) {
+    return [a[2] * b[3] - a[3] * b[2], 
+            a[1] * b[3] - a[3] * b[1],
+            a[1] * b[2] - a[2] * b[1]]
+}
+
+function minus(a, b) {
+    return a.map((k, i) => k - b[i])
+}
+
+function dot(v1, v2) {
+    return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2]
+}
+
+function scale(v, n) {
+    return v.map((v) => v * n)
+}
+
+function project(normal, point, pointOnPlane) {
+    return minus(point, scale(normal, dot(minus(pointOnPlane, point), normal)))
+}
+
+let transform, planeNormal, planeOrigin, planeTangent, tangent, normal
+
+function findClosest(elm) {
+    transform = getTotalTransform(elm)
+    planeNormal = toCartesian(rightMultiplyVector(transform, [0, 0, 1, 1]))
+    planeOrigin = toCartesian(rightMultiplyVector(transform, [0, 0, 0, 1]))
+    normal = minus(planeNormal, planeOrigin)
+    let vec = toCartesian(rightMultiplyVector(Matrix.matrixInverse(Matrix.arr2mat(4, 4, getTotalTransform(elm))).flat(2), toHomogeneous(project(normal, [-cameraX, cameraY, cameraZ], planeOrigin))))
+    return [vec[0], vec[1]]
+}
+
+findClosest(document.getElementById('mark1'))
 
 const levels = 1;
 let fractalGenerator = [[0, 0], [0.5, 0.5], [0.5, 0], [0, 0.5]];
-const nodeConfig = fractalize.repeat(levels)(fractalGenerator)
-log(nodeConfig)
+const nodeConfig = fractalize.repeat(levels)(fractalGenerator)[0]
 
 function fractalize(generator) {
     return generator.map((x) => fractalGenerator.map((y) => [x[0] / 2 + y[0], x[1] / 2 + y[1]])).flat(1)
 }
 
-function generateSegment(u, v, level, partial) {
-    let fullLevelCenters = [[0, 0], [1, 1], [1, 0], [0, 1]];
+function generateSegment(u, v, level, partial, elm) {
     let partialLevelCenters = [...nodeConfig];
-    let currentIndex
-    let radii = partialLevelCenters.map(() => (++currentIndex, (partial * nodeConfig.length) - currentIndex)); 
+    let currentIndex = 21
+    partial = 2 - (2 ** (1 - partial))
+    let radii = partialLevelCenters.map(() => (--currentIndex, 
+        max(min(currentIndex - (partial * nodeConfig.length), 1), 0)
+    ) * dotScale / fidelity * 10);
+    return toGradients(u, v, nodeConfig.map(node => [node[0] * (2 ** level), node[1] * (2 ** level)]), radii)
 }
 
-function generateRequiredGradients(elm) {
-    let totalWidth = elm.offsetWidth,
-        totalHeight = elm.offsetHeight
-    let startPos = {u: fidelity/2, v: fidelity/2}
-    let distance = distToCamera(elm, startPos.u, startPos.v)
-    let fractalLevel = floor(log2(1 / distance) / fidelity)
-    let partialLevel = (distance - 1 << floor(log2(1 / distance)))
-    let stepU = fractalLevel * fidelity
-    while (startPos.u < totalWidth) {
+let clip = (num, max, min) => num > max? max: num < min? min: num
 
+const maxSegments = 200
+
+function generateRequiredGradients(elm) {
+    let totalWidth = elm.scrollWidth,
+        totalHeight = elm.scrollHeight,
+        roundWidth = 2 ** ceil(log2(elm.scrollWidth)),
+        roundHeight = 2 ** ceil(log2(elm.scrollHeight))
+    let segments, level, partial, distance, requested
+    let closest = findClosest(elm)
+    let closestClipped = [clip(closest[0], roundWidth, 0), clip(closest[1], roundHeight, 0)]
+    distance = distToCameraArr(elm, closestClipped)
+    let segment;
+    segments = [[0, 0, max(ceil(log2(elm.scrollWidth)), ceil(log2(elm.scrollHeight)))]]
+    let n = 0
+    let gradients = "radial-gradient(circle farthest-corner at 0px 0px, white 0px, transparent 0px)"
+    let closestX = closestClipped[0], closestY = closestClipped[1], u, v
+
+    while(segments.length > 0 && n < maxSegments) {
+        segment = segments.pop()
+        level = segment[2]
+        u = segment[0]
+        v = segment[1]
+        if (u > totalWidth || v > totalHeight) continue
+        closestClipped = [clip(closest[0], u + (2 ** level), u), clip(closest[1], v + (2 ** level), v)]
+        distance = distToCameraArr(elm, closestClipped)
+        partial = (distance/fidelity - (2 ** level))/(2 ** level)
+        requested = floor(-log2(fidelity/distance))
+        if (requested < level) {
+            segments.push([u, v, level-1], [u + (2 ** (level - 1)), v, level-1], [u + (2 ** (level - 1)), v + (2 ** (level - 1)), level-1], [u, v + (2 ** (level - 1)), level-1])
+        } else gradients += generateSegment(u, v, level, partial, elm)
+        n++
     }
+    return gradients
 }
 
 
@@ -428,6 +537,14 @@ function getLookVector() {
         */
     
     return {x: sin(yaw) * cos(pitch), y: -sin(pitch), z: cos(yaw) * cos(pitch)}
+}
+
+function basisOf(vec, î, ĵ, k̂) {
+
+}
+
+function getRotVector(vec) {
+    return [asin((vec[0]/pythag(vec))/cos(asin(-(vec[1]/pythag(vec))))), asin(-(vec[1]/pythag(vec)))]
 }
 
 function identifiableHandler() {
