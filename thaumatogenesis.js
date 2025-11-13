@@ -347,7 +347,7 @@ setTimeout(setInterval(() => {
     document.getElementById("mark1").setAttribute("style", `min-height: 100px; min-width: 100px; background-color: white; right: 0; top: 0; position: absolute; background-image: ${generateRequiredGradients(elm)}, radial-gradient(circle farthest-corner at ${findClosest(elm)[0] + 100}px ${findClosest(elm)[1] - 100}px, red 100px, transparent 100px)`)
 }, 1), 100)
 
-const fidelity = 2,
+const fidelity = 20,
       dotScale = 1.5
 
 function toGradients(u, v, centers, radii) {
@@ -426,9 +426,9 @@ function generateSegment(u, v, level, partial, elm) {
     let partialLevelCenters = [...nodeConfig];
     let currentIndex = 21
     partial = 2 - (2 ** (1 - partial))
-    let radii = partialLevelCenters.map(() => (--currentIndex, 
+    let radii = partialLevelCenters.map((center) => (--currentIndex, 
         max(min(currentIndex - (partial * nodeConfig.length), 1), 0)
-    ) * dotScale / fidelity * 10);
+    ) * (distToCamera(elm, u + center[0], v + center[1])/20) * dotScale/ fidelity);
     return toGradients(u, v, nodeConfig.map(node => [node[0] * (2 ** level), node[1] * (2 ** level)]), radii)
 }
 
