@@ -1,6 +1,156 @@
 "use strict";
 let currentSceneFlags = [];
 
+    
+let withAs = (obj, cb) => cb(obj);
+let sum = arr => arr.reduce((a, b) => a + b);
+let mul = arr => arr.reduce((a, b) => a * b);
+let sub = arr => arr.splice(1).reduce((a, b) => a - b, arr[0]);
+let deepClone = obj => JSON.parse(JSON.stringify(obj));
+
+let shifter = (arr, step) => [
+    ...arr.splice(step),
+    ...arr.splice(arr.length - step)
+]
+
+let makeArray = (n, cb) =>
+    [...Array(n).keys()].map(
+        i => cb ? cb(i) : i
+    )
+
+let makeMatrix = (len, wid, fill) =>
+    makeArray(len).map(i => makeArray(
+        wid, j => fill ? fill(i, j) : 0
+    ))
+
+let matrixRandom =
+    (len, wid, min = 0, max = 100) =>
+        makeMatrix(len, wid, x => Math.round(
+            Math.random() * (max - min)
+        ) + min)
+
+let matrixSize = matrix => [
+    matrix.length, matrix[0].length
+]
+
+/**
+ * 
+ */
+let arr2mat = (len, wid, arr) => 
+    makeArray(len).map(i => arr.slice(
+        i * wid, i * wid + wid
+    ))
+
+let matrixMap = (matrix, cb) =>
+    deepClone(matrix).map((i, ix) => i.map(
+        (j, jx) => cb({ i, ix, j, jx, matrix })
+    ))
+
+let matrixScalar = (n, matrix) =>
+    matrixMap(matrix, ({ j }) => n * j)
+
+let matrixAdd = matrices =>
+    matrices.reduce((acc, inc) => matrixMap(
+        acc, ({ j, ix, jx }) => j + inc[ix][jx]
+    ), makeMatrix(...matrixSize(matrices[0])))
+
+let matrixSub = matrices => matrices.splice(1)
+    .reduce((acc, inc) => matrixMap(
+        acc, ({ j, ix, jx }) => j - inc[ix][jx]
+    ), matrices[0])
+
+let matrixMul = (m1, m2) => makeMatrix(
+    m1.length, m2[0].length, (i, j) => sum(
+        m1[i].map((k, kx) => k * m2[kx][j])
+    )
+)
+
+let matrixMuls = matrices =>
+    deepClone(matrices).splice(1)
+        .reduce((acc, inc) => makeMatrix(
+            acc.length, inc[0].length,
+            (ix, jx) => sum(acc[ix].map(
+                (k, kx) => k * inc[kx][jx]
+            ))
+        ), deepClone(matrices[0]))
+
+let matrixMinor = (matrix, row, col) =>
+    matrix.length < 3 ? matrix :
+        matrix.filter((i, ix) => ix !== row - 1)
+            .map(i => i.filter((j, jx) => jx !== col - 1))
+
+let matrixTrans = matrix => makeMatrix(
+    ...shifter(matrixSize(matrix), 1),
+    (i, j) => matrix[j][i]
+)
+
+let matrixDet = matrix => withAs(
+    deepClone(matrix), clone => matrix.length < 3
+        ? sub(matrixTrans(clone.map(shifter)).map(mul))
+        : sum(clone[0].map((i, ix) => matrixDet(
+            matrixMinor(matrix, 1, ix + 1)
+        ) * Math.pow(-1, ix + 2) * i))
+)
+
+let matrixCofactor = matrix => matrixMap(
+    matrix, ({ i, ix, j, jx }) =>
+    matrix[0].length > 2 ?
+        Math.pow(-1, ix + jx + 2) * matrixDet(
+            matrixMinor(matrix, ix + 1, jx + 1)
+        ) : (ix != jx ? -matrix[jx][ix]
+            : matrix[+!ix][+!jx]
+        )
+)
+
+let matrixInverse = matrix => matrixMap(
+    matrixTrans(matrixCofactor(matrix)),
+    ({ j }) => j / matrixDet(matrix)
+)
+
+let matrixLinSolve = (conds, res) => matrixMul(
+    matrixInverse(conds), res.map(i => [i])
+).map(i => i[0])
+
+class Matrix {
+    
+    static shifter = shifter
+
+    static makeArray = makeArray
+
+    static makeMatrix = makeMatrix
+
+    static matrixRandom = matrixRandom
+
+    static matrixSize = matrixSize
+
+    static arr2mat = arr2mat
+
+    static matrixMap = matrixMap
+
+    static matrixScalar = matrixScalar
+
+    static matrixAdd = matrixAdd
+
+    static matrixSub = matrixSub
+
+    static matrixMul = matrixMul
+
+    static matrixMuls = matrixMuls
+
+    static matrixMinor = matrixMinor
+
+    static matrixTrans = matrixTrans
+
+    static matrixDet = matrixDet
+
+    static matrixCofactor = matrixCofactor
+
+    static matrixInverse = matrixInverse
+
+    static matrixLinSolve = matrixLinSolve
+/* */
+}
+
 // Aliased functions
 let sin = Math.sin,
     cos = Math.cos,
@@ -14,6 +164,11 @@ let sin = Math.sin,
     sign = Math.sign,
     max = Math.max,
     min = Math.min,
+    rand = Math.random,
+    log2 = Math.log2,
+    floor = Math.floor,
+    ceil = Math.ceil,
+    round = Math.round,
     pi = Math.PI,
     assert = console.assert,
     log = console.log
@@ -94,6 +249,317 @@ function cameraHandler () {
     camerarot.setAttribute("style", `transform: rotateX(${pitch}rad) rotateY(${-yaw}rad)`)
 }
 
+function rotateX(coord, val) {
+    let x = coord.x,
+        y = coord.y,
+        z = coord.z
+    return {
+        x: x, 
+        y: y * cos(val) - z * sin(val), 
+        z: y * sin(val) + z * cos(val)
+    }
+}
+
+function rotateY(coord, val) {
+    let x = coord.x,
+        y = coord.y,
+        z = coord.z
+    return {
+        x: z * sin(val) + x * cos(val), 
+        y: y, 
+        z: z * cos(val) - x * sin(val)
+    }
+}
+
+
+function rotateZ(coord, val) {
+    let x = coord.x,
+        y = coord.y,
+        z = coord.z
+    return {
+        x: x * cos(val) - y * sin(val), 
+        y: x * sin(val) + y * sin(val), 
+        z: z
+    }
+}
+
+function translateX(coord, val) {
+    let x = coord.x,
+        y = coord.y,
+        z = coord.z
+    return {
+        x: x + val, 
+        y: y, 
+        z: z
+    }
+}
+
+function translateY(coord, val) {
+    let x = coord.x,
+        y = coord.y,
+        z = coord.z
+    return {
+        x: x, 
+        y: y + val, 
+        z: z
+    }
+}
+
+function translateZ(coord, val) {
+    let x = coord.x,
+        y = coord.y,
+        z = coord.z
+    return {
+        x: x, 
+        y: y, 
+        z: z + val
+    }
+}
+
+function toHomogeneous(coord) {
+    return [coord[0], coord[1], coord[2], 1]
+}
+
+function toCartesian(coord) {
+    return [coord[0] / coord[3], coord[1] / coord[3], coord[2] / coord[3]]
+}
+
+function rightMultiplyVector(m1, v1) {
+    return [m1[ 0] * v1[0] + m1[ 4] * v1[1] + m1[ 8] * v1[2] + m1[12] * v1[3], 
+            m1[ 1] * v1[0] + m1[ 5] * v1[1] + m1[ 9] * v1[2] + m1[13] * v1[3], 
+            m1[ 2] * v1[0] + m1[ 6] * v1[1] + m1[10] * v1[2] + m1[14] * v1[3], 
+            m1[ 3] * v1[0] + m1[ 7] * v1[1] + m1[11] * v1[2] + m1[15] * v1[3]]
+}
+
+function leftMultiplyVector(m1, v1) {
+    return [m1[ 0] * v1[0] + m1[ 1] * v1[1] + m1[ 2] * v1[2] + m1[ 3] * v1[3], 
+            m1[ 4] * v1[0] + m1[ 5] * v1[1] + m1[ 6] * v1[2] + m1[ 7] * v1[3], 
+            m1[ 8] * v1[0] + m1[ 9] * v1[1] + m1[10] * v1[2] + m1[11] * v1[3], 
+            m1[12] * v1[0] + m1[13] * v1[1] + m1[14] * v1[2] + m1[15] * v1[3]]
+}
+
+function matMultiply4x4(m1, m2) {
+    let ax1 = m1[ 0], ax2 = m1[ 1], ax3 = m1[ 2], ax4 = m1[ 3],
+        ay1 = m1[ 4], ay2 = m1[ 5], ay3 = m1[ 6], ay4 = m1[ 7],
+        az1 = m1[ 8], az2 = m1[ 9], az3 = m1[10], az4 = m1[11],
+        aw1 = m1[12], aw2 = m1[13], aw3 = m1[14], aw4 = m1[15]
+    let bx1 = m2[ 0], bx2 = m2[ 1], bx3 = m2[ 2], bx4 = m2[ 3],
+        by1 = m2[ 4], by2 = m2[ 5], by3 = m2[ 6], by4 = m2[ 7],
+        bz1 = m2[ 8], bz2 = m2[ 9], bz3 = m2[10], bz4 = m2[11],
+        bw1 = m2[12], bw2 = m2[13], bw3 = m2[14], bw4 = m2[15]
+    return [
+        ax1 * bx1 + ax2 * by1 + ax3 * bz1 + ax4 * bw1,  ax1 * bx2 + ax2 * by2 + ax3 * bz2 + ax4 * bw2,  ax1 * bx3 + ax2 * by3 + ax3 * bz3 + ax4 * bw3,  ax1 * bx4 + ax2 * by4 + ax3 * bz4 + ax4 * bw4,
+        ay1 * bx1 + ay2 * by1 + ay3 * bz1 + ay4 * bw1,  ay1 * bx2 + ay2 * by2 + ay3 * bz2 + ay4 * bw2,  ay1 * bx3 + ay2 * by3 + ay3 * bz3 + ay4 * bw3,  ay1 * bx4 + ay2 * by4 + ay3 * bz4 + ay4 * bw4,
+        az1 * bx1 + az2 * by1 + az3 * bz1 + az4 * bw1,  az1 * bx2 + az2 * by2 + az3 * bz2 + az4 * bw2,  az1 * bx3 + az2 * by3 + az3 * bz3 + az4 * bw3,  az1 * bx4 + az2 * by4 + az3 * bz4 + az4 * bw4,
+        aw1 * bx1 + aw2 * by1 + aw3 * bz1 + aw4 * bw1,  aw1 * bx2 + aw2 * by2 + aw3 * bz2 + aw4 * bw2,  aw1 * bx3 + aw2 * by3 + aw3 * bz3 + aw4 * bw3,  aw1 * bx4 + aw2 * by4 + aw3 * bz4 + aw4 * bw4,
+    ]
+}
+
+function fromMatrix3d(transform) {
+    return transform.substring(9, transform.length-1).split(",").map((val) => + +val);
+}
+
+function fromMatrix2d(transform) {
+    return from2d(transform.substring(7, transform.length-1).split(",").map((val) => + +val))
+
+}
+
+function toMatrix3d(transform) {
+    return `matrix3d(${""+transform})`
+}
+
+function getTotalTransform(element) {
+    // This is our identity matrix. It will be transformed into our total transform over time.
+    let runningTransform = identMatrix()
+    let transform
+    while(element.id != "camera-translate") {
+        transform = window.getComputedStyle(element).transform
+        if (transform.startsWith("matrix3d")) if (transform != "none") runningTransform = matMultiply4x4(runningTransform, fromMatrix3d(transform))
+        else; else if (transform.startsWith("matrix")) if (transform != "none") runningTransform = matMultiply4x4(runningTransform, fromMatrix2d(transform))
+        element = element.parentElement
+    }
+    return runningTransform;
+}
+
+function uvElementToWorld(elm, u, v) {
+    let transform = getTotalTransform(elm)
+    let vector = [u, v, 0, 1]
+    let transformedCoord = rightMultiplyVector(transform, vector)
+    return toCartesian(transformedCoord)
+}
+
+function toCamera(elm, u, v) {
+    let transformedUV = uvElementToWorld(elm, u, v)
+    return [cameraX + transformedUV[0], cameraY + transformedUV[1], cameraZ + transformedUV[2]]
+}
+
+function distToCamera(elm, u, v) {
+    return pythag(toCamera(elm, u, v))
+}
+function distToCameraArr(elm, uv) {
+    return pythag(toCamera(elm, uv[0], uv[1]))
+}
+
+function distToCameraProvider(elm) {
+    let transform = getTotalTransform(elm)
+    return (u, v) => {
+        let transformedUV = toCartesian(rightMultiplyVector(transform, [u, v, 0, 1]))
+        return pythag([cameraX - transformedUV[0], cameraY - transformedUV[1], cameraZ - transformedUV[2]])
+    }
+}
+
+function pythag(vec) {
+    return sqrt(vec.reduce((x,y) => x + y * y, 0))
+}
+
+markers.innerHTML += '<div id="mark1" ></div>'
+
+setTimeout(() => {
+    log(generateRequiredGradients(document.getElementById("groundrender")))
+    setInterval(() => {
+    let time = performance.now()
+    let vec = uvElementToWorld(document.getElementById("transformtest"), -50, -50)
+    markers.setAttribute("style", `transform: translate3d(${vec[0]}px, ${vec[1]}px, ${vec[2]}px);`)
+    let elm = document.getElementById("mark1")
+    let startPos = {u: 0, v: 0}
+    let distance = distToCamera(elm, startPos.u, startPos.v)
+    let fractalLevel = floor(-log2(fidelity/distance))
+    let partialLevel = (distance/fidelity - (2 ** fractalLevel))/(2 ** fractalLevel)
+    let time1 = performance.now()
+    document.getElementById("mark1").parentElement.innerHTML = `<div id="mark1" style="background-image: ${generateRequiredGradients(document.getElementById("mark1"))}"></div>`
+    
+    let time2 = performance.now()
+    //log(time2-time1)
+}, 1000/34)}, 200)
+
+const fidelity = 10,
+      dotScale = 1.5,
+      maxLevels = 5
+
+function toGradients(u, v, centers, radii) {
+    return radii.reduce((valPrev, valNew, ind) => valPrev + ((valNew > 0.01)? `, radial-gradient(circle at ${round((u + centers[ind][0]))}px ${round((v + centers[ind][1]))}px, black ${round(valNew)}px, transparent ${round(valNew)}px)`: ""), "");
+}
+
+function cross(a, b) {
+    return [a[2] * b[3] - a[3] * b[2], 
+            a[1] * b[3] - a[3] * b[1],
+            a[1] * b[2] - a[2] * b[1]]
+}
+
+function minus(a, b) {
+    return a.map((k, i) => k - b[i])
+}
+
+function dot(v1, v2) {
+    return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2]
+}
+
+function scale(v, n) {
+    return v.map((v) => v * n)
+}
+
+function project(normal, point, pointOnPlane) {
+    return minus(point, scale(normal, dot(minus(pointOnPlane, point), normal)))
+}
+
+let transform, planeNormal, planeOrigin, planeTangent, tangent, normal
+
+function getNormal(elm) {
+    transform = getTotalTransform(elm)
+    planeNormal = toCartesian(rightMultiplyVector(transform, [0, 0, 1, 1]))
+    planeOrigin = toCartesian(rightMultiplyVector(transform, [0, 0, 0, 1]))
+    normal = minus(planeNormal, planeOrigin)
+    return normal 
+}
+
+function findClosest(elm) {
+    transform = getTotalTransform(elm)
+    planeNormal = toCartesian(rightMultiplyVector(transform, [0, 0, 1, 1]))
+    planeOrigin = toCartesian(rightMultiplyVector(transform, [0, 0, 0, 1]))
+    normal = minus(planeNormal, planeOrigin)
+    let vec = toCartesian(rightMultiplyVector(Matrix.matrixInverse(Matrix.arr2mat(4, 4, getTotalTransform(elm))).flat(2), toHomogeneous(project(normal, [-cameraX, cameraY, cameraZ], planeOrigin))))
+    return [vec[0], vec[1]]
+}
+
+findClosest(document.getElementById('mark1'))
+
+const levels = 1;
+let fractalGenerator = [[0, 0], [0.5, 0.5], [0.5, 0], [0, 0.5]];
+const nodeConfig = fractalize.repeat(levels)(fractalGenerator)[0]
+let startTime
+
+function fractalize(generator) {
+    return generator.map((x) => fractalGenerator.map((y) => [x[0] / 2 + y[0], x[1] / 2 + y[1]])).flat(1)
+}
+let partialLevelCenters, currentIndex, radii
+function generateSegment(u, v, level, partial, dist, segwidth) {
+    partialLevelCenters = [...nodeConfig];
+    currentIndex = 21
+    radii = partialLevelCenters.map(() => (--currentIndex, 
+        max(min(currentIndex - (partial * nodeConfig.length), 1), 0)
+    ) * (dist/20) * dotScale / fidelity);
+    return toGradients(u, v, nodeConfig.map(node => [node[0] * segwidth, node[1] * segwidth]), radii)
+}
+
+let clip = (num, max, min) => num > max? max: num < min? min: num
+
+const maxSegments = 80000
+
+function quickIntExpo(e) {
+    return e > 0? 2 << (e - 1): 1 / (2 << e)
+}
+
+function normalize (vec) {
+    let py = pythag(vec)
+    return [vec[0]/py, vec[1]/py, vec[2]/py]
+}
+
+let closest, element, totalWidth, totalHeight, roundWidth, roundHeight, segwidth, closestClipped, distance, partial, requested
+let n = 0;
+function descend(level, u, v, segwidth) {
+    if (u > totalWidth || v > totalHeight) {return "";}
+    closestClipped = [clip(closest[0], u + segwidth, u), clip(closest[1], v + segwidth, v)]
+    distance = distToCameraArr(element, closestClipped)
+    partial = ((distance/fidelity) - segwidth)/segwidth
+    //partial = (2 ** partial) - 1
+    requested = floor(-log2(fidelity/distance))
+    if (requested < level && level - 1 > maxLevels && !(n > maxSegments)) {
+        return descend(level - 1, u + (segwidth/2), v + (segwidth/2), segwidth/2) + descend(level - 1, u + (segwidth/2), v, segwidth/2) + descend(level - 1, u, v + (segwidth/2), segwidth/2) + descend(level - 1, u, v, segwidth/2)
+    } else {
+        return generateSegment(u, v, level, partial, distance, segwidth)
+    }
+}
+
+function generateRequiredGradients(elm) {
+    totalWidth = elm.scrollWidth,
+    totalHeight = elm.scrollHeight,
+    roundWidth = 2 ** ceil(log2(elm.scrollWidth)),
+    roundHeight = 2 ** ceil(log2(elm.scrollHeight))
+    element = elm
+    closest = findClosest(elm)
+    let closestClipped = [clip(closest[0], roundWidth, 0), clip(closest[1], roundHeight, 0)]
+    /*if(
+        dot(
+            normalize(
+                minus(
+                    uvElementToWorld(elm, closestClipped[0], closestClipped[1]), 
+                    [cameraX, cameraY, cameraZ]
+                )
+            ), 
+            getLookVectorArr()
+        ) < 0.1 || 
+        dot(
+            getLookVectorArr(), 
+            getNormal(elm)
+        ) < 0.1) return;
+    /* */
+    n = 0;
+    startTime = performance.now();
+    let gradients = "radial-gradient(circle at 0px 0px, white 0px, transparent 0px)" + descend(max(ceil(log2(elm.scrollWidth)), ceil(log2(elm.scrollHeight))), 0, 0, (2**max(ceil(log2(elm.scrollWidth)), ceil(log2(elm.scrollHeight)))))
+    return gradients
+}
+
+
 let i = 0;
 let boxesRegistered = false;
 
@@ -161,6 +627,14 @@ function getLookVector() {
         */
     
     return {x: sin(yaw) * cos(pitch), y: -sin(pitch), z: cos(yaw) * cos(pitch)}
+}
+
+function getLookVectorArr() {
+    return [sin(yaw) * cos(pitch), -sin(pitch), cos(yaw) * cos(pitch)]
+}
+
+function getRotVector(vec) {
+    return [asin((vec[0]/pythag(vec))/cos(asin(-(vec[1]/pythag(vec))))), asin(-(vec[1]/pythag(vec)))]
 }
 
 function identifiableHandler() {
@@ -478,3 +952,12 @@ addEventListener("keydown", (event) => {
             break;
     }
 }) 
+
+generateRequiredGradients(document.getElementById("groundrender"))
+
+
+
+
+
+
+

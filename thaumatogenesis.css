@@ -59,9 +59,6 @@ body {
   height: 100%;
   background-color: orange;
 }
-#example-element {
-  transform: translate3d(0, -200px, 0);
-}
 .test.square {
   width: 100px;
   height: 100px;
@@ -70,6 +67,22 @@ body {
   border: 2px solid red;
   outline: 1px solid transparent;
 }
+/* [markdown]
+I have included this as a demonstration of the very unintuitive way in which transforms work. It's also my test cube.
+Transforms are very unintuitive, so **listen up.**
+Here's the rundown:
+  - CSS 3d transforms appy at the **center of the object** they affect.
+  - Since in JavaScript we are calculating our coordinates based on transformation matrices, we need all of our texture squares to start at a consistent point.
+  - The easy way to do this is as follows:
+    1) We set our texture container (in this case .face) to be 0px by 0px.
+    2) We set our texture squares (in this case .face::after) to be the desired size (in this case 100px by 100px).
+      ! In the specific case of ::after objects, we need to set **min-width** and not just width since for some reason CSS hates me. idk man
+    3) Since this is testing, we set the background of our texture squares to the desired color.
+    4) We apply our transform to the texture container that's 0x0. Since it is centered at the origin, this means the transform will __always apply around the origin__.
+      ! WE DO NOT APPLY OUR TRANSFORM TO THE TEXTURE SQUARE. EVER. THIS LEADS TO EXTRAORDINARILY INCONSISTENT RESULTS.
+    5) Finally, we set our texture square to position: absolute and top, left: 0 so that all of our texture squares start at the top left and go down and to the right. This corresponds to how we do our UV coords in JavaScript.
+Also, who decided transforms would apply __from the right to the left?!!__ >::(
+*/
 .face {
   display: flex;
   align-items: center;
@@ -80,44 +93,69 @@ body {
   backface-visibility: inherit;
   font-size: 60px;
   color: white;
-  transform: translateZ(100px);
+}
+.face .after {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  min-width: 100px;
+  height: 100px;
+  text-align: center;
+  line-height: 100px;
+  background-color: inherit;
 }
 .front {
   background: rgba(90, 90, 90, 0.7);
-  transform: translateZ(50px);
+  transform: translateZ(50px) translateX(50px);
+}
+.front .after {
+  content: "1";
 }
 .back {
   background: rgba(0, 210, 0, 0.7);
-  transform: rotateY(180deg) translateZ(50px);
+  transform: rotateY(180deg) translateZ(50px) translateX(50px);
+}
+.back::after {
+  content: "2";
 }
 .right {
   background: rgba(210, 0, 0, 0.7);
-  transform: rotateY(90deg) translateZ(50px);
+  transform: rotateY(90deg) translateZ(50px) translateX(50px);
+}
+.right::after {
+  content: "3";
 }
 .left {
   background: rgba(0, 0, 210, 0.7);
-  transform: rotateY(-90deg) translateZ(50px);
+  transform: rotateY(-90deg) translateZ(50px) translateX(50px);
+}
+.left::after {
+  content: "4";
 }
 .top {
   background: rgba(210, 210, 0, 0.7);
-  transform: rotateX(90deg) translateZ(50px);
+  transform: rotateX(90deg) translateY(-50px) translateX(50px);
+}
+.top::after {
+  content: "5";
 }
 .bottom {
   background: rgba(210, 0, 210, 0.7);
-  transform: rotateX(-90deg) translateZ(50px);
+  transform: translateY(100px) rotateX(-90deg) translateY(-50px) translateX(50px);
+}
+.bottom::after {
+  content: "6";
 }
 #renderercss {
   width: 100%;
   height: 100%;
 }
 .render-3d {
-  width: 100px;
-  height: 100px;
   transform-style: preserve-3d;
   margin: auto;
 }
 .perspectivefar {
-  perspective: 1500px;
+  perspective: 100vh;
   perspective-origin: 50% 50%;
   width: 100%;
   height: 100vh;
@@ -129,10 +167,10 @@ body {
   margin: auto;
 }
 .ground {
-  transform: translate3d(-1950px, -1600px, 0);
+  transform: translate3d(-2010px, 250px, -2010px) rotateX(90deg);
   transform-style: preserve-3d;
 }
-.ground::after {
+.ground .after {
   display: inline-block;
   position: absolute;
   width: 4000px;
@@ -141,24 +179,14 @@ body {
   background-size: 100px 100px;
   /* Size of the grid cells */
   content: " ";
-  transform: rotate3d(1, 0, 0, 90deg);
   border: 10px solid red;
   outline: 1px solid  transparent;
 }
 .camera {
   transform-style: preserve-3d;
 }
-.camera.main {
-  transform: rotate3d(1, 0, 0, 0deg);
-}
-.camera.main2 {
-  transform: translate3d(0px, 0px, 800px);
-}
-.camera.translate-out {
-  transform: translate3d(0px, -300px, -1500px);
-}
 .camera.translate-in {
-  transform: translate3d(0px, 300px, 1500px);
+  transform: translate3d(0px, calc(50vh), 100vh);
 }
 .identify {
   z-index: 100;
@@ -209,4 +237,30 @@ body {
 }
 .properties-html {
   display: none;
+}
+.object {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  height: 0px;
+  width: 0px;
+}
+.transform-origin {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  height: 0px;
+  width: 0px;
+}
+#transformtest {
+  background-image: radial-gradient(circle farthest-corner at 50px 50px, white 4px, transparent 4px);
+}
+#mark1 {
+  min-height: 400px;
+  min-width: 400px;
+  background-color: white;
+  right: 0;
+  top: 0;
+  position: absolute;
+  background-image: attr(data-gradients);
 }
