@@ -1,8 +1,155 @@
 "use strict";
 let currentSceneFlags = [];
 
-import {Matrix} from "./matrices.js";
+    
+let withAs = (obj, cb) => cb(obj);
+let sum = arr => arr.reduce((a, b) => a + b);
+let mul = arr => arr.reduce((a, b) => a * b);
+let sub = arr => arr.splice(1).reduce((a, b) => a - b, arr[0]);
+let deepClone = obj => JSON.parse(JSON.stringify(obj));
 
+let shifter = (arr, step) => [
+    ...arr.splice(step),
+    ...arr.splice(arr.length - step)
+]
+
+let makeArray = (n, cb) =>
+    [...Array(n).keys()].map(
+        i => cb ? cb(i) : i
+    )
+
+let makeMatrix = (len, wid, fill) =>
+    makeArray(len).map(i => makeArray(
+        wid, j => fill ? fill(i, j) : 0
+    ))
+
+let matrixRandom =
+    (len, wid, min = 0, max = 100) =>
+        makeMatrix(len, wid, x => Math.round(
+            Math.random() * (max - min)
+        ) + min)
+
+let matrixSize = matrix => [
+    matrix.length, matrix[0].length
+]
+
+/**
+ * 
+ */
+let arr2mat = (len, wid, arr) => 
+    makeArray(len).map(i => arr.slice(
+        i * wid, i * wid + wid
+    ))
+
+let matrixMap = (matrix, cb) =>
+    deepClone(matrix).map((i, ix) => i.map(
+        (j, jx) => cb({ i, ix, j, jx, matrix })
+    ))
+
+let matrixScalar = (n, matrix) =>
+    matrixMap(matrix, ({ j }) => n * j)
+
+let matrixAdd = matrices =>
+    matrices.reduce((acc, inc) => matrixMap(
+        acc, ({ j, ix, jx }) => j + inc[ix][jx]
+    ), makeMatrix(...matrixSize(matrices[0])))
+
+let matrixSub = matrices => matrices.splice(1)
+    .reduce((acc, inc) => matrixMap(
+        acc, ({ j, ix, jx }) => j - inc[ix][jx]
+    ), matrices[0])
+
+let matrixMul = (m1, m2) => makeMatrix(
+    m1.length, m2[0].length, (i, j) => sum(
+        m1[i].map((k, kx) => k * m2[kx][j])
+    )
+)
+
+let matrixMuls = matrices =>
+    deepClone(matrices).splice(1)
+        .reduce((acc, inc) => makeMatrix(
+            acc.length, inc[0].length,
+            (ix, jx) => sum(acc[ix].map(
+                (k, kx) => k * inc[kx][jx]
+            ))
+        ), deepClone(matrices[0]))
+
+let matrixMinor = (matrix, row, col) =>
+    matrix.length < 3 ? matrix :
+        matrix.filter((i, ix) => ix !== row - 1)
+            .map(i => i.filter((j, jx) => jx !== col - 1))
+
+let matrixTrans = matrix => makeMatrix(
+    ...shifter(matrixSize(matrix), 1),
+    (i, j) => matrix[j][i]
+)
+
+let matrixDet = matrix => withAs(
+    deepClone(matrix), clone => matrix.length < 3
+        ? sub(matrixTrans(clone.map(shifter)).map(mul))
+        : sum(clone[0].map((i, ix) => matrixDet(
+            matrixMinor(matrix, 1, ix + 1)
+        ) * Math.pow(-1, ix + 2) * i))
+)
+
+let matrixCofactor = matrix => matrixMap(
+    matrix, ({ i, ix, j, jx }) =>
+    matrix[0].length > 2 ?
+        Math.pow(-1, ix + jx + 2) * matrixDet(
+            matrixMinor(matrix, ix + 1, jx + 1)
+        ) : (ix != jx ? -matrix[jx][ix]
+            : matrix[+!ix][+!jx]
+        )
+)
+
+let matrixInverse = matrix => matrixMap(
+    matrixTrans(matrixCofactor(matrix)),
+    ({ j }) => j / matrixDet(matrix)
+)
+
+let matrixLinSolve = (conds, res) => matrixMul(
+    matrixInverse(conds), res.map(i => [i])
+).map(i => i[0])
+
+class Matrix {
+    
+    static shifter = shifter
+
+    static makeArray = makeArray
+
+    static makeMatrix = makeMatrix
+
+    static matrixRandom = matrixRandom
+
+    static matrixSize = matrixSize
+
+    static arr2mat = arr2mat
+
+    static matrixMap = matrixMap
+
+    static matrixScalar = matrixScalar
+
+    static matrixAdd = matrixAdd
+
+    static matrixSub = matrixSub
+
+    static matrixMul = matrixMul
+
+    static matrixMuls = matrixMuls
+
+    static matrixMinor = matrixMinor
+
+    static matrixTrans = matrixTrans
+
+    static matrixDet = matrixDet
+
+    static matrixCofactor = matrixCofactor
+
+    static matrixInverse = matrixInverse
+
+    static matrixLinSolve = matrixLinSolve
+/* */
+}
 
 // Aliased functions
 let sin = Math.sin,
@@ -21,6 +168,7 @@ let sin = Math.sin,
     log2 = Math.log2,
     floor = Math.floor,
     ceil = Math.ceil,
+    round = Math.round,
     pi = Math.PI,
     assert = console.assert,
     log = console.log
@@ -333,10 +481,12 @@ function pythag(vec) {
     return sqrt(vec.reduce((x,y) => x + y * y, 0))
 }
 
-markers.innerHTML += '<div id="mark1"></div>'
-document.getElementById("mark1").setAttribute("style", "min-height: 100px; min-width: 100px; background-color: white; right: 0; top: 0; position: absolute;")
+markers.innerHTML += '<div id="mark1" ></div>'
 
-setTimeout(setInterval(() => {
+setTimeout(() => {
+    log(generateRequiredGradients(document.getElementById("groundrender")))
+    setInterval(() => {
+    let time = performance.now()
     let vec = uvElementToWorld(document.getElementById("transformtest"), -50, -50)
     markers.setAttribute("style", `transform: translate3d(${vec[0]}px, ${vec[1]}px, ${vec[2]}px);`)
     let elm = document.getElementById("mark1")
@@ -344,39 +494,19 @@ setTimeout(setInterval(() => {
     let distance = distToCamera(elm, startPos.u, startPos.v)
     let fractalLevel = floor(-log2(fidelity/distance))
     let partialLevel = (distance/fidelity - (2 ** fractalLevel))/(2 ** fractalLevel)
-    document.getElementById("mark1").setAttribute("style", `min-height: 100px; min-width: 100px; background-color: white; right: 0; top: 0; position: absolute; background-image: ${generateRequiredGradients(elm)}, radial-gradient(circle farthest-corner at ${findClosest(elm)[0] + 100}px ${findClosest(elm)[1] - 100}px, red 100px, transparent 100px)`)
-}, 1), 100)
+    let time1 = performance.now()
+    document.getElementById("mark1").parentElement.innerHTML = `<div id="mark1" style="background-image: ${generateRequiredGradients(document.getElementById("mark1"))}"></div>`
+    
+    let time2 = performance.now()
+    //log(time2-time1)
+}, 1000/34)}, 200)
 
-const fidelity = 20,
-      dotScale = 1.5
+const fidelity = 10,
+      dotScale = 1.5,
+      maxLevels = 5
 
 function toGradients(u, v, centers, radii) {
-    let rad = [...radii]
-    return rad.reduce((valPrev, valNew, ind, arr) => valPrev + `, radial-gradient(circle farthest-corner at ${u + centers[ind][0]}px ${v + centers[ind][1]}px, black ${valNew}px, transparent ${valNew}px)`, ``);
-}
-
-const guesses = 10
-
-function binSearch(provider, range) {
-    let i;
-    let guess = range/2;
-    let prevGuess = 0;
-    let error = provider(guess);
-    let prevError = provider(0);
-    for (i = 0; i < guesses; ++i) {
-        length = (2 ** -i) * range/4
-        let saveGuess = guess;
-        if (prevError < error) {
-            guess += length * sign(guess - prevGuess)
-        } else guess -= length * sign(guess - prevGuess)
-        prevGuess = saveGuess
-        error = provider(guess);
-        prevError = provider(guess);
-        log(prevError)
-        log(guess)
-        log(error)
-    }
-
+    return radii.reduce((valPrev, valNew, ind) => valPrev + ((valNew > 0.01)? `, radial-gradient(circle at ${round((u + centers[ind][0]))}px ${round((v + centers[ind][1]))}px, black ${round(valNew)}px, transparent ${round(valNew)}px)`: ""), "");
 }
 
 function cross(a, b) {
@@ -403,6 +533,14 @@ function project(normal, point, pointOnPlane) {
 
 let transform, planeNormal, planeOrigin, planeTangent, tangent, normal
 
+function getNormal(elm) {
+    transform = getTotalTransform(elm)
+    planeNormal = toCartesian(rightMultiplyVector(transform, [0, 0, 1, 1]))
+    planeOrigin = toCartesian(rightMultiplyVector(transform, [0, 0, 0, 1]))
+    normal = minus(planeNormal, planeOrigin)
+    return normal 
+}
+
 function findClosest(elm) {
     transform = getTotalTransform(elm)
     planeNormal = toCartesian(rightMultiplyVector(transform, [0, 0, 1, 1]))
@@ -417,55 +555,76 @@ findClosest(document.getElementById('mark1'))
 const levels = 1;
 let fractalGenerator = [[0, 0], [0.5, 0.5], [0.5, 0], [0, 0.5]];
 const nodeConfig = fractalize.repeat(levels)(fractalGenerator)[0]
+let startTime
 
 function fractalize(generator) {
     return generator.map((x) => fractalGenerator.map((y) => [x[0] / 2 + y[0], x[1] / 2 + y[1]])).flat(1)
 }
-
-function generateSegment(u, v, level, partial, elm) {
-    let partialLevelCenters = [...nodeConfig];
-    let currentIndex = 21
-    partial = 2 - (2 ** (1 - partial))
-    let radii = partialLevelCenters.map((center) => (--currentIndex, 
+let partialLevelCenters, currentIndex, radii
+function generateSegment(u, v, level, partial, dist, segwidth) {
+    partialLevelCenters = [...nodeConfig];
+    currentIndex = 21
+    radii = partialLevelCenters.map(() => (--currentIndex, 
         max(min(currentIndex - (partial * nodeConfig.length), 1), 0)
-    ) * (distToCamera(elm, u + center[0], v + center[1])/20) * dotScale/ fidelity);
-    return toGradients(u, v, nodeConfig.map(node => [node[0] * (2 ** level), node[1] * (2 ** level)]), radii)
+    ) * (dist/20) * dotScale / fidelity);
+    return toGradients(u, v, nodeConfig.map(node => [node[0] * segwidth, node[1] * segwidth]), radii)
 }
 
 let clip = (num, max, min) => num > max? max: num < min? min: num
 
-const maxSegments = 200
+const maxSegments = 80000
+
+function quickIntExpo(e) {
+    return e > 0? 2 << (e - 1): 1 / (2 << e)
+}
+
+function normalize (vec) {
+    let py = pythag(vec)
+    return [vec[0]/py, vec[1]/py, vec[2]/py]
+}
+
+let closest, element, totalWidth, totalHeight, roundWidth, roundHeight, segwidth, closestClipped, distance, partial, requested
+let n = 0;
+function descend(level, u, v, segwidth) {
+    if (u > totalWidth || v > totalHeight) {return "";}
+    closestClipped = [clip(closest[0], u + segwidth, u), clip(closest[1], v + segwidth, v)]
+    distance = distToCameraArr(element, closestClipped)
+    partial = ((distance/fidelity) - segwidth)/segwidth
+    //partial = (2 ** partial) - 1
+    requested = floor(-log2(fidelity/distance))
+    if (requested < level && level - 1 > maxLevels && !(n > maxSegments)) {
+        return descend(level - 1, u + (segwidth/2), v + (segwidth/2), segwidth/2) + descend(level - 1, u + (segwidth/2), v, segwidth/2) + descend(level - 1, u, v + (segwidth/2), segwidth/2) + descend(level - 1, u, v, segwidth/2)
+    } else {
+        return generateSegment(u, v, level, partial, distance, segwidth)
+    }
+}
 
 function generateRequiredGradients(elm) {
-    let totalWidth = elm.scrollWidth,
-        totalHeight = elm.scrollHeight,
-        roundWidth = 2 ** ceil(log2(elm.scrollWidth)),
-        roundHeight = 2 ** ceil(log2(elm.scrollHeight))
-    let segments, level, partial, distance, requested
-    let closest = findClosest(elm)
+    totalWidth = elm.scrollWidth,
+    totalHeight = elm.scrollHeight,
+    roundWidth = 2 ** ceil(log2(elm.scrollWidth)),
+    roundHeight = 2 ** ceil(log2(elm.scrollHeight))
+    element = elm
+    closest = findClosest(elm)
     let closestClipped = [clip(closest[0], roundWidth, 0), clip(closest[1], roundHeight, 0)]
-    distance = distToCameraArr(elm, closestClipped)
-    let segment;
-    segments = [[0, 0, max(ceil(log2(elm.scrollWidth)), ceil(log2(elm.scrollHeight)))]]
-    let n = 0
-    let gradients = "radial-gradient(circle farthest-corner at 0px 0px, white 0px, transparent 0px)"
-    let closestX = closestClipped[0], closestY = closestClipped[1], u, v
-
-    while(segments.length > 0 && n < maxSegments) {
-        segment = segments.pop()
-        level = segment[2]
-        u = segment[0]
-        v = segment[1]
-        if (u > totalWidth || v > totalHeight) continue
-        closestClipped = [clip(closest[0], u + (2 ** level), u), clip(closest[1], v + (2 ** level), v)]
-        distance = distToCameraArr(elm, closestClipped)
-        partial = (distance/fidelity - (2 ** level))/(2 ** level)
-        requested = floor(-log2(fidelity/distance))
-        if (requested < level) {
-            segments.push([u, v, level-1], [u + (2 ** (level - 1)), v, level-1], [u + (2 ** (level - 1)), v + (2 ** (level - 1)), level-1], [u, v + (2 ** (level - 1)), level-1])
-        } else gradients += generateSegment(u, v, level, partial, elm)
-        n++
-    }
+    /*if(
+        dot(
+            normalize(
+                minus(
+                    uvElementToWorld(elm, closestClipped[0], closestClipped[1]), 
+                    [cameraX, cameraY, cameraZ]
+                )
+            ), 
+            getLookVectorArr()
+        ) < 0.1 || 
+        dot(
+            getLookVectorArr(), 
+            getNormal(elm)
+        ) < 0.1) return;
+    /* */
+    n = 0;
+    startTime = performance.now();
+    let gradients = "radial-gradient(circle at 0px 0px, white 0px, transparent 0px)" + descend(max(ceil(log2(elm.scrollWidth)), ceil(log2(elm.scrollHeight))), 0, 0, (2**max(ceil(log2(elm.scrollWidth)), ceil(log2(elm.scrollHeight)))))
     return gradients
 }
 
@@ -539,8 +698,8 @@ function getLookVector() {
     return {x: sin(yaw) * cos(pitch), y: -sin(pitch), z: cos(yaw) * cos(pitch)}
 }
 
-function basisOf(vec, î, ĵ, k̂) {
-
+function getLookVectorArr() {
+    return [sin(yaw) * cos(pitch), -sin(pitch), cos(yaw) * cos(pitch)]
 }
 
 function getRotVector(vec) {
@@ -862,3 +1021,12 @@ addEventListener("keydown", (event) => {
             break;
     }
 }) 
+
+generateRequiredGradients(document.getElementById("groundrender"))
+
+
+
+
+
+
+
